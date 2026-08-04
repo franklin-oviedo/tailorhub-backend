@@ -28,10 +28,17 @@ DB_NAME=tailorhub
 JWT_SECRET=replace-with-a-strong-secret
 PORT=3000
 NODE_ENV=development
+CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
 ```
 
 When you want to use Render DB, set `DATABASE_URL` with the Render connection string.
 When `DATABASE_URL` is empty, the app uses local fallback values (`DB_HOST`, `DB_PORT`, etc.).
+
+For CORS, use `CORS_ORIGINS` as a comma-separated list of allowed frontend origins.
+Example for Angular local dev:
+
+- `http://localhost:4200`
+- `http://127.0.0.1:4200`
 
 ## Local PostgreSQL with Docker
 
@@ -114,6 +121,44 @@ Recommended local flow before pushing:
 2. Ensure local `.env` has `DATABASE_URL=` empty and local DB vars set.
 3. `npm run start:dev`
 4. `npm run test:ci`
+
+## Seed users for local testing
+
+Run:
+
+```bash
+npm run seed:users
+```
+
+This seed is idempotent and **local-only**.
+
+- It will fail if `NODE_ENV=production`.
+- It will fail if `DATABASE_URL` points to a non-local host.
+
+It seeds all main tables with demo data:
+
+- `stores`
+- `users`
+- `products`
+- `orders`
+- `order_items`
+- `appointments`
+
+Users created/updated:
+
+- admin: `admin@tailorhub.local`
+- employee: `employee@tailorhub.local`
+- client: `client@tailorhub.local`
+
+Default password for all seeded users:
+
+- `TailorHub123!`
+
+Optional environment variables:
+
+- `SEED_DEFAULT_PASSWORD`
+- `SEED_STORE_EMAIL`
+- `SEED_STORE_NAME`
 
 ## Testing and coverage
 

@@ -15,6 +15,7 @@
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
+    "seed:users": "ts-node -r tsconfig-paths/register src/scripts/seed-users.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:ci": "jest --ci --runInBand --coverage",
