@@ -232,4 +232,107 @@ describe('UsersService', () => {
       NotFoundException,
     );
   });
+
+  it('throws ForbiddenException when manager updates user from another store', async () => {
+    const managerActor = {
+      sub: 'manager-1',
+      email: 'manager@test.com',
+      role: Role.MANAGER,
+      storeId: 'store-1',
+    };
+    const target = { id: 'user-2', role: Role.EMPLOYEE, storeId: 'other-store' } as User;
+    usersRepository.findOne.mockResolvedValue(target);
+
+    await expect(service.update('user-2', { fullName: 'x' }, managerActor)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+
+  it('throws ForbiddenException when manager tries to assign super admin role', async () => {
+    const managerActor = {
+      sub: 'manager-1',
+      email: 'manager@test.com',
+      role: Role.MANAGER,
+      storeId: 'store-1',
+    };
+    const target = { id: 'user-2', role: Role.EMPLOYEE, storeId: 'store-1' } as User;
+    usersRepository.findOne.mockResolvedValue(target);
+
+    await expect(service.update('user-2', { role: Role.SUPER_ADMIN }, managerActor)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+
+  it('throws ForbiddenException when manager tries to move user across stores', async () => {
+    const managerActor = {
+      sub: 'manager-1',
+      email: 'manager@test.com',
+      role: Role.MANAGER,
+      storeId: 'store-1',
+    };
+    const target = { id: 'user-2', role: Role.EMPLOYEE, storeId: 'store-1' } as User;
+    usersRepository.findOne.mockResolvedValue(target);
+
+    await expect(service.update('user-2', { storeId: 'other-store' }, managerActor)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+
+  it('allows manager to update same-store user details', async () => {
+    const managerActor = {
+      sub: 'manager-1',
+      email: 'manager@test.com',
+      role: Role.MANAGER,
+      storeId: 'store-1',
+    };
+    const target = { id: 'user-2', role: Role.EMPLOYEE, storeId: 'store-1', email: 'u@test.com' } as User;
+    usersRepository.findOne.mockResolvedValue(target);
+    usersRepository.save.mockResolvedValue({ ...target, fullName: 'Updated Name' } as User);
+
+    const result = await service.update('user-2', { fullName: 'Updated Name' }, managerActor);
+
+    expect(result.fullName).toBe('Updated Name');
+  });
+
+  it('allows manager to remove same-store non-super-admin user', async () => {
+    const managerActor = {
+      sub: 'manager-1',
+      email: 'manager@test.com',
+      role: Role.MANAGER,
+      storeId: 'store-1',
+    };
+    const target = { id: 'user-2', role: Role.EMPLOYEE, storeId: 'store-1' } as User;
+    usersRepository.findOne.mockResolvedValue(target);
+    usersRepository.remove.mockResolvedValue(target);
+
+    await service.remove('user-2', managerActor);
+
+    expect(usersRepository.remove).toHaveBeenCalledWith(target);
+  });
+
+  it('throws ForbiddenException when manager removes super admin', async () => {
+    const managerActor = {
+      sub: 'manager-1',
+      email: 'manager@test.com',
+      role: Role.MANAGER,
+      storeId: 'store-1',
+    };
+    const target = { id: 'user-2', role: Role.SUPER_ADMIN, storeId: 'store-1' } as User;
+    usersRepository.findOne.mockResolvedValue(target);
+
+    await expect(service.remove('user-2', managerActor)).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('throws ForbiddenException when manager removes user from another store', async () => {
+    const managerActor = {
+      sub: 'manager-1',
+      email: 'manager@test.com',
+      role: Role.MANAGER,
+      storeId: 'store-1',
+    };
+    const target = { id: 'user-2', role: Role.EMPLOYEE, storeId: 'other-store' } as User;
+    usersRepository.findOne.mockResolvedValue(target);
+
+    await expect(service.remove('user-2', managerActor)).rejects.toBeInstanceOf(ForbiddenException);
+  });
 });

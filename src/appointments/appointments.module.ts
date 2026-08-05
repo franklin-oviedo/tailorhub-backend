@@ -4,10 +4,11 @@ import { AppointmentsService } from './appointments.service';
 import { AppointmentsController } from './appointments.controller';
 import { Appointment } from '../entities/appointment.entity';
 import { User } from '../entities/user.entity';
+import { PlanPermissionsGuard } from '../common/guards/plan-permissions.guard';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Appointment, User])],
-  providers: [AppointmentsService],
+  providers: [AppointmentsService, PlanPermissionsGuard],
   controllers: [AppointmentsController],
   exports: [AppointmentsService],
 })

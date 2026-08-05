@@ -47,6 +47,9 @@ export class User {
   @OneToMany(() => Appointment, (appointment) => appointment.employee)
   employeeAppointments!: Appointment[];
 
+  @OneToMany(() => Store, (store) => store.manager)
+  managedStores!: Store[];
+
   @CreateDateColumn()
   createdAt!: Date;
 

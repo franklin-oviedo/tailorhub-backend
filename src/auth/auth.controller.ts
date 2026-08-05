@@ -3,6 +3,7 @@ import {
   ApiBadRequestResponse,
   ApiBody,
   ApiCreatedResponse,
+  ApiHeader,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -19,6 +20,11 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register a user in a store' })
+  @ApiHeader({
+    name: 'x-store-id',
+    required: false,
+    description: 'Optional tenant context header for frontend integrations.',
+  })
   @ApiBody({ type: RegisterDto })
   @ApiCreatedResponse({
     description: 'User registered successfully.',
@@ -31,6 +37,11 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Login with email and password' })
+  @ApiHeader({
+    name: 'x-store-id',
+    required: false,
+    description: 'Optional tenant context header for frontend integrations.',
+  })
   @ApiBody({ type: LoginDto })
   @ApiCreatedResponse({
     description: 'Login successful.',

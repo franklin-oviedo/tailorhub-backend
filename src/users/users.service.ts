@@ -14,6 +14,8 @@ import { Role } from '../common/enums/role.enum';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
 
+const isSuperAdmin = (role: Role): boolean => role === Role.SUPER_ADMIN || role === Role.ADMIN;
+
 @Injectable()
 export class UsersService {
   /* c8 ignore start */
@@ -50,7 +52,7 @@ export class UsersService {
         'user.updatedAt',
       ]);
 
-    if (actor.role !== Role.ADMIN) {
+    if (!isSuperAdmin(actor.role)) {
       qb.andWhere('user.storeId = :storeId', { storeId: actor.storeId });
     }
 
@@ -89,7 +91,7 @@ export class UsersService {
       throw new NotFoundException('User not found.');
     }
 
-    if (actor.role !== Role.ADMIN && user.storeId !== actor.storeId) {
+    if (!isSuperAdmin(actor.role) && user.storeId !== actor.storeId) {
       throw new ForbiddenException('You cannot access users from another store.');
     }
 
@@ -102,17 +104,31 @@ export class UsersService {
       throw new NotFoundException('User not found.');
     }
 
-    if (actor.role !== Role.ADMIN) {
-      if (actor.sub !== id) {
-        throw new ForbiddenException('You can only update your own profile.');
-      }
+    if (!isSuperAdmin(actor.role)) {
+      if (actor.role === Role.MANAGER) {
+        if (user.storeId !== actor.storeId) {
+          throw new ForbiddenException('Managers can only update users from their store.');
+        }
 
-      if (updateUserDto.role && updateUserDto.role !== user.role) {
-        throw new ForbiddenException('You cannot update your role.');
-      }
+        if (updateUserDto.storeId && updateUserDto.storeId !== user.storeId) {
+          throw new ForbiddenException('Managers cannot move users across stores.');
+        }
 
-      if (updateUserDto.storeId && updateUserDto.storeId !== user.storeId) {
-        throw new ForbiddenException('You cannot move users across stores.');
+        if (updateUserDto.role && [Role.SUPER_ADMIN, Role.ADMIN].includes(updateUserDto.role)) {
+          throw new ForbiddenException('Managers cannot assign super admin roles.');
+        }
+      } else {
+        if (actor.sub !== id) {
+          throw new ForbiddenException('You can only update your own profile.');
+        }
+
+        if (updateUserDto.role && updateUserDto.role !== user.role) {
+          throw new ForbiddenException('You cannot update your role.');
+        }
+
+        if (updateUserDto.storeId && updateUserDto.storeId !== user.storeId) {
+          throw new ForbiddenException('You cannot move users across stores.');
+        }
       }
     }
 
@@ -139,8 +155,18 @@ export class UsersService {
       throw new NotFoundException('User not found.');
     }
 
-    if (actor.role !== Role.ADMIN && actor.sub !== id) {
-      throw new ForbiddenException('You can only delete your own account.');
+    if (!isSuperAdmin(actor.role)) {
+      if (actor.role === Role.MANAGER) {
+        if (user.storeId !== actor.storeId) {
+          throw new ForbiddenException('Managers can only delete users from their store.');
+        }
+
+        if ([Role.SUPER_ADMIN, Role.ADMIN].includes(user.role)) {
+          throw new ForbiddenException('Managers cannot delete super admin users.');
+        }
+      } else if (actor.sub !== id) {
+        throw new ForbiddenException('You can only delete your own account.');
+      }
     }
 
     await this.usersRepository.remove(user);

@@ -17,6 +17,8 @@ import { Role } from '../common/enums/role.enum';
 import { ListOrdersQueryDto } from './dto/list-orders-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
 
+const isSuperAdmin = (role: Role): boolean => role === Role.SUPER_ADMIN || role === Role.ADMIN;
+
 @Injectable()
 export class OrdersService {
   /* c8 ignore start */
@@ -117,7 +119,7 @@ export class OrdersService {
       .leftJoinAndSelect('order.customer', 'customer')
       .leftJoinAndSelect('order.employee', 'employee');
 
-    if (actor.role !== Role.ADMIN) {
+    if (!isSuperAdmin(actor.role)) {
       qb.andWhere('order.storeId = :storeId', { storeId: actor.storeId });
     }
 
@@ -153,7 +155,7 @@ export class OrdersService {
       throw new NotFoundException('Order not found.');
     }
 
-    if (actor.role !== Role.ADMIN && order.storeId !== actor.storeId) {
+    if (!isSuperAdmin(actor.role) && order.storeId !== actor.storeId) {
       throw new ForbiddenException('You cannot access orders from another store.');
     }
 

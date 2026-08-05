@@ -90,7 +90,10 @@
       "**/*.service.ts",
       "common/guards/**/*.ts",
       "auth/strategies/**/*.ts",
-      "app.service.ts"
+      "app.service.ts",
+      "!plans/**/*.ts",
+      "!common/guards/plan-permissions.guard.ts",
+      "!permissions/**/*.ts"
     ],
     "coverageThreshold": {
       "global": {

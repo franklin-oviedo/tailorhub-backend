@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateStoreDto {
@@ -23,4 +23,20 @@ export class CreateStoreDto {
   @IsString()
   @MaxLength(255)
   address?: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'Manager user id assigned to this store.',
+  })
+  @IsOptional()
+  @IsUUID()
+  managerId?: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'Subscription plan id assigned to this store.',
+  })
+  @IsOptional()
+  @IsUUID()
+  planId?: string;
 }

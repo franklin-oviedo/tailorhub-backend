@@ -13,6 +13,8 @@ import { Role } from '../common/enums/role.enum';
 import { ListProductsQueryDto } from './dto/list-products-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
 
+const isSuperAdmin = (role: Role): boolean => role === Role.SUPER_ADMIN || role === Role.ADMIN;
+
 @Injectable()
 export class ProductsService {
   /* c8 ignore start */
@@ -41,7 +43,7 @@ export class ProductsService {
 
     const qb = this.productsRepository.createQueryBuilder('product');
 
-    if (actor.role !== Role.ADMIN) {
+    if (!isSuperAdmin(actor.role)) {
       qb.andWhere('product.storeId = :storeId', { storeId: actor.storeId });
     }
 
@@ -76,7 +78,7 @@ export class ProductsService {
       throw new NotFoundException('Product not found.');
     }
 
-    if (actor.role !== Role.ADMIN && product.storeId !== actor.storeId) {
+    if (!isSuperAdmin(actor.role) && product.storeId !== actor.storeId) {
       throw new ForbiddenException('You cannot access products from another store.');
     }
 

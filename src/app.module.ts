@@ -15,6 +15,10 @@ import { Product } from './entities/product.entity';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Appointment } from './entities/appointment.entity';
+import { Plan } from './entities/plan.entity';
+import { Permission } from './entities/permission.entity';
+import { PlansModule } from './plans/plans.module';
+import { PermissionsModule } from './permissions/permissions.module';
 
 @Module({
   imports: [
@@ -33,7 +37,7 @@ import { Appointment } from './entities/appointment.entity';
           return {
             type: 'postgres' as const,
             url: databaseUrl,
-            entities: [Store, User, Product, Order, OrderItem, Appointment],
+            entities: [Store, User, Product, Order, OrderItem, Appointment, Plan, Permission],
             synchronize: shouldSynchronize,
             ssl: isProduction ? { rejectUnauthorized: false } : false,
           };
@@ -46,7 +50,7 @@ import { Appointment } from './entities/appointment.entity';
           username: configService.get<string>('DB_USERNAME', 'postgres'),
           password: configService.get<string>('DB_PASSWORD', 'postgres'),
           database: configService.get<string>('DB_NAME', 'tailorhub'),
-          entities: [Store, User, Product, Order, OrderItem, Appointment],
+          entities: [Store, User, Product, Order, OrderItem, Appointment, Plan, Permission],
           synchronize: shouldSynchronize,
           ssl: isProduction ? { rejectUnauthorized: false } : false,
         };
@@ -58,6 +62,8 @@ import { Appointment } from './entities/appointment.entity';
     ProductsModule,
     OrdersModule,
     AppointmentsModule,
+    PlansModule,
+    PermissionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

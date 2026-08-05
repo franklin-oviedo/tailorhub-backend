@@ -134,6 +134,7 @@ This seed is idempotent and **local-only**.
 
 - It will fail if `NODE_ENV=production`.
 - It will fail if `DATABASE_URL` points to a non-local host.
+- In local mode, it performs schema sync before inserting demo data.
 
 It seeds all main tables with demo data:
 
@@ -144,9 +145,16 @@ It seeds all main tables with demo data:
 - `order_items`
 - `appointments`
 
+Demo business data includes:
+
+- 3 products
+- 3 orders with different statuses (`pending`, `in_progress`, `completed`)
+- 3 appointments with different statuses (`scheduled`, `confirmed`, `completed`)
+
 Users created/updated:
 
-- admin: `admin@tailorhub.local`
+- super admin: `superadmin@tailorhub.local`
+- manager: `manager@tailorhub.local`
 - employee: `employee@tailorhub.local`
 - client: `client@tailorhub.local`
 

@@ -9,6 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  ApiBody,
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOkResponse,
@@ -22,14 +23,17 @@ import {
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { PlanPermissionsGuard } from '../common/guards/plan-permissions.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { ApiMessageResponseDto } from '../common/dto/api-message-response.dto';
+import { Permissions } from '../common/decorators/permissions.decorator';
+import { ModulePermission } from '../common/enums/module-permission.enum';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PlanPermissionsGuard)
 @ApiTags('Users')
 @ApiBearerAuth('access-token')
 @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT token.' })
@@ -44,6 +48,7 @@ export class UsersController {
   }
 
   @Get()
+  @Permissions(ModulePermission.USERS_MANAGE)
   @ApiOperation({ summary: 'List users with pagination and filters' })
   @ApiOkResponse({ description: 'Paginated users list.' })
   findAll(@CurrentUser() user: JwtPayload, @Query() query: ListUsersQueryDto) {
@@ -51,6 +56,7 @@ export class UsersController {
   }
 
   @Get(':id')
+  @Permissions(ModulePermission.USERS_MANAGE)
   @ApiOperation({ summary: 'Get user by id' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ description: 'User found.' })
@@ -61,8 +67,10 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @Permissions(ModulePermission.USERS_MANAGE)
   @ApiOperation({ summary: 'Update user profile or admin-managed user' })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: UpdateUserDto })
   @ApiOkResponse({ description: 'User updated successfully.' })
   @ApiNotFoundResponse({ description: 'User not found.' })
   @ApiForbiddenResponse({ description: 'Insufficient permissions.' })
@@ -76,6 +84,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @Permissions(ModulePermission.USERS_MANAGE)
   @ApiOperation({ summary: 'Delete a user' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({

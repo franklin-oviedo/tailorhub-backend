@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBody,
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -40,8 +41,9 @@ export class StoresController {
   constructor(private readonly storesService: StoresService) {}
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Create a store (admin only)' })
+  @ApiBody({ type: CreateStoreDto })
   @ApiOkResponse({ description: 'Store created successfully.' })
   @ApiBadRequestResponse({ description: 'Validation error or duplicated email.' })
   create(@Body() createStoreDto: CreateStoreDto) {
@@ -49,7 +51,7 @@ export class StoresController {
   }
 
   @Get()
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'List stores (admin only)' })
   @ApiOkResponse({ description: 'Paginated stores list.' })
   findAll(@Query() query: ListStoresQueryDto) {
@@ -57,7 +59,7 @@ export class StoresController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Get store by id (admin only)' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ description: 'Store found.' })
@@ -67,9 +69,10 @@ export class StoresController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Update store (admin only)' })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: UpdateStoreDto })
   @ApiOkResponse({ description: 'Store updated successfully.' })
   @ApiNotFoundResponse({ description: 'Store not found.' })
   @ApiBadRequestResponse({ description: 'Validation error or duplicated email.' })
@@ -78,7 +81,7 @@ export class StoresController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Delete store (admin only)' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({

@@ -10,6 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiBody,
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -30,9 +32,12 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { ListProductsQueryDto } from './dto/list-products-query.dto';
 import { ApiMessageResponseDto } from '../common/dto/api-message-response.dto';
+import { PlanPermissionsGuard } from '../common/guards/plan-permissions.guard';
+import { Permissions } from '../common/decorators/permissions.decorator';
+import { ModulePermission } from '../common/enums/module-permission.enum';
 
 @Controller('products')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PlanPermissionsGuard)
 @ApiTags('Products')
 @ApiBearerAuth('access-token')
 @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT token.' })
@@ -40,9 +45,12 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Permissions(ModulePermission.PRODUCTS_MANAGE)
   @ApiOperation({ summary: 'Create product' })
+  @ApiBody({ type: CreateProductDto })
   @ApiOkResponse({ description: 'Product created successfully.' })
+  @ApiBadRequestResponse({ description: 'Validation error.' })
   @ApiForbiddenResponse({ description: 'Insufficient role or store permissions.' })
   create(
     @Body() createProductDto: CreateProductDto,
@@ -52,6 +60,7 @@ export class ProductsController {
   }
 
   @Get()
+  @Permissions(ModulePermission.PRODUCTS_MANAGE)
   @ApiOperation({ summary: 'List products with pagination and filters' })
   @ApiOkResponse({ description: 'Paginated products list.' })
   findAll(@CurrentUser() user: JwtPayload, @Query() query: ListProductsQueryDto) {
@@ -59,6 +68,7 @@ export class ProductsController {
   }
 
   @Get(':id')
+  @Permissions(ModulePermission.PRODUCTS_MANAGE)
   @ApiOperation({ summary: 'Get product by id' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ description: 'Product found.' })
@@ -69,11 +79,14 @@ export class ProductsController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Permissions(ModulePermission.PRODUCTS_MANAGE)
   @ApiOperation({ summary: 'Update product' })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: UpdateProductDto })
   @ApiOkResponse({ description: 'Product updated successfully.' })
   @ApiNotFoundResponse({ description: 'Product not found.' })
+  @ApiBadRequestResponse({ description: 'Validation error.' })
   @ApiForbiddenResponse({ description: 'Insufficient role or store permissions.' })
   update(
     @Param('id') id: string,
@@ -84,7 +97,8 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
+  @Permissions(ModulePermission.PRODUCTS_MANAGE)
   @ApiOperation({ summary: 'Delete product (admin only)' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({

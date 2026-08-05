@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -31,9 +32,12 @@ import { Role } from '../common/enums/role.enum';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { ListOrdersQueryDto } from './dto/list-orders-query.dto';
 import { ApiMessageResponseDto } from '../common/dto/api-message-response.dto';
+import { PlanPermissionsGuard } from '../common/guards/plan-permissions.guard';
+import { Permissions } from '../common/decorators/permissions.decorator';
+import { ModulePermission } from '../common/enums/module-permission.enum';
 
 @Controller('orders')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PlanPermissionsGuard)
 @ApiTags('Orders')
 @ApiBearerAuth('access-token')
 @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT token.' })
@@ -41,8 +45,10 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Permissions(ModulePermission.ORDERS_MANAGE)
   @ApiOperation({ summary: 'Create order' })
+  @ApiBody({ type: CreateOrderDto })
   @ApiOkResponse({ description: 'Order created successfully.' })
   @ApiBadRequestResponse({ description: 'Validation or business rule error.' })
   @ApiForbiddenResponse({ description: 'Insufficient role or cross-store data usage.' })
@@ -54,6 +60,7 @@ export class OrdersController {
   }
 
   @Get()
+  @Permissions(ModulePermission.ORDERS_MANAGE)
   @ApiOperation({ summary: 'List orders with pagination and filters' })
   @ApiOkResponse({ description: 'Paginated orders list.' })
   findAll(@CurrentUser() user: JwtPayload, @Query() query: ListOrdersQueryDto) {
@@ -61,6 +68,7 @@ export class OrdersController {
   }
 
   @Get(':id')
+  @Permissions(ModulePermission.ORDERS_MANAGE)
   @ApiOperation({ summary: 'Get order by id' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ description: 'Order found.' })
@@ -71,9 +79,11 @@ export class OrdersController {
   }
 
   @Patch(':id/status')
-  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Permissions(ModulePermission.ORDERS_MANAGE)
   @ApiOperation({ summary: 'Update order status' })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: UpdateOrderStatusDto })
   @ApiOkResponse({ description: 'Order status updated successfully.' })
   @ApiNotFoundResponse({ description: 'Order not found.' })
   @ApiForbiddenResponse({ description: 'Insufficient role or cross-store access.' })
@@ -87,7 +97,8 @@ export class OrdersController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
+  @Permissions(ModulePermission.ORDERS_MANAGE)
   @ApiOperation({ summary: 'Delete order (admin only)' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({

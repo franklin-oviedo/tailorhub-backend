@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -31,9 +32,12 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
 import { ApiMessageResponseDto } from '../common/dto/api-message-response.dto';
+import { PlanPermissionsGuard } from '../common/guards/plan-permissions.guard';
+import { Permissions } from '../common/decorators/permissions.decorator';
+import { ModulePermission } from '../common/enums/module-permission.enum';
 
 @Controller('appointments')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PlanPermissionsGuard)
 @ApiTags('Appointments')
 @ApiBearerAuth('access-token')
 @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT token.' })
@@ -41,8 +45,10 @@ export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Permissions(ModulePermission.APPOINTMENTS_MANAGE)
   @ApiOperation({ summary: 'Create appointment' })
+  @ApiBody({ type: CreateAppointmentDto })
   @ApiOkResponse({ description: 'Appointment created successfully.' })
   @ApiBadRequestResponse({ description: 'Validation or business rule error.' })
   @ApiForbiddenResponse({ description: 'Insufficient role or cross-store access.' })
@@ -54,6 +60,7 @@ export class AppointmentsController {
   }
 
   @Get()
+  @Permissions(ModulePermission.APPOINTMENTS_MANAGE)
   @ApiOperation({ summary: 'List appointments with pagination and filters' })
   @ApiOkResponse({ description: 'Paginated appointments list.' })
   findAll(
@@ -64,6 +71,7 @@ export class AppointmentsController {
   }
 
   @Get(':id')
+  @Permissions(ModulePermission.APPOINTMENTS_MANAGE)
   @ApiOperation({ summary: 'Get appointment by id' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({ description: 'Appointment found.' })
@@ -74,9 +82,11 @@ export class AppointmentsController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Permissions(ModulePermission.APPOINTMENTS_MANAGE)
   @ApiOperation({ summary: 'Update appointment' })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: UpdateAppointmentDto })
   @ApiOkResponse({ description: 'Appointment updated successfully.' })
   @ApiNotFoundResponse({ description: 'Appointment not found.' })
   @ApiBadRequestResponse({ description: 'Validation or business rule error.' })
@@ -90,7 +100,8 @@ export class AppointmentsController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
+  @Permissions(ModulePermission.APPOINTMENTS_MANAGE)
   @ApiOperation({ summary: 'Delete appointment (admin only)' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({

@@ -15,6 +15,8 @@ import { Role } from '../common/enums/role.enum';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
 
+const isSuperAdmin = (role: Role): boolean => role === Role.SUPER_ADMIN || role === Role.ADMIN;
+
 @Injectable()
 export class AppointmentsService {
   /* c8 ignore start */
@@ -72,7 +74,7 @@ export class AppointmentsService {
       .leftJoinAndSelect('appointment.client', 'client')
       .leftJoinAndSelect('appointment.employee', 'employee');
 
-    if (actor.role !== Role.ADMIN) {
+    if (!isSuperAdmin(actor.role)) {
       qb.andWhere('appointment.storeId = :storeId', { storeId: actor.storeId });
     }
 
@@ -112,7 +114,7 @@ export class AppointmentsService {
       throw new NotFoundException('Appointment not found.');
     }
 
-    if (actor.role !== Role.ADMIN && appointment.storeId !== actor.storeId) {
+    if (!isSuperAdmin(actor.role) && appointment.storeId !== actor.storeId) {
       throw new ForbiddenException('You cannot access appointments from another store.');
     }
 
