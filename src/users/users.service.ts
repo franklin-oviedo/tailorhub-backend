@@ -47,10 +47,9 @@ export class UsersService {
         'user.fullName',
         'user.email',
         'user.role',
-        'user.storeId',
         'user.createdAt',
         'user.updatedAt',
-      ]);
+      ]).innerJoinAndSelect('user.store', 'store');
 
     if (!isSuperAdmin(actor.role)) {
       qb.andWhere('user.storeId = :storeId', { storeId: actor.storeId });
