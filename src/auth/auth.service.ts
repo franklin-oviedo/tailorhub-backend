@@ -69,27 +69,33 @@ export class AuthService {
     return { accessToken: await this.signToken(savedUser) };
   }
 
-  async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
-    const customer = await this.customersRepository.findOne({
-      where: { email: loginDto.email },
+  async login(loginDto: LoginDto ): Promise<{ accessToken: string }> {
+    const user = await this.usersRepository.findOne({
+      where: [
+        { employee: { email: loginDto.email } },
+        { customer: { email: loginDto.email } },
+      ],
+      relations: { employee: true, store: true, customer: true },
     });
 
-    if (!customer) {
-      throw new UnauthorizedException('Invalid credentials.');
+    console.log('User found:', user); // Debugging line
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
     }
 
-    const passwordMatches = await bcrypt.compare(loginDto.password, customer.user.password);
+    const passwordMatches = await bcrypt.compare(loginDto.password, user.password);
+    console.log('Password matches:', passwordMatches); // Debugging line
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid credentials.');
     }
 
-    return { accessToken: await this.signToken(customer.user) };
+    return { accessToken: await this.signToken(user) };
   }
 
   private async signToken(user: User): Promise<string> {
     const payload: JwtPayload = {
       sub: user.id,
-      email: user.customer.email,
+      email: user.customer?.email ?? user.employee?.email,
       role: user.role,
       storeId: user.store.id,
     };

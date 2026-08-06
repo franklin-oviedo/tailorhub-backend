@@ -12,6 +12,9 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AccessTokenResponseDto } from './dto/access-token-response.dto';
+import { Roles, ROLES_KEY } from 'src/common/decorators/roles.decorator';
+import { Role } from 'src/common/enums/role.enum';
+import { request } from 'https';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -37,11 +40,6 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Login with email and password' })
-  @ApiHeader({
-    name: 'x-store-id',
-    required: false,
-    description: 'Optional tenant context header for frontend integrations.',
-  })
   @ApiBody({ type: LoginDto })
   @ApiCreatedResponse({
     description: 'Login successful.',

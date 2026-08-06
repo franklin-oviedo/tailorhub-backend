@@ -7,6 +7,9 @@ export class Employee {
   @PrimaryGeneratedColumn('uuid', { name: 'id', comment: 'Unique identifier for the employee' })
   id: string;
 
+  @Column({name: 'name', type: 'varchar', length: 255, nullable: false, comment: 'Full name of the employee'})
+  name: string;
+
   @Column({ name: 'phone', type: 'varchar', length: 20, nullable: true })
   phone: string;
 
