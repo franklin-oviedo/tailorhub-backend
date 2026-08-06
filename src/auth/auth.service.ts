@@ -14,6 +14,7 @@ import { LoginDto } from './dto/login.dto';
 import { Role } from '../common/enums/role.enum';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Customers } from 'src/entities/customer.entity';
+import { Employee } from 'src/entities/employee.entity';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,8 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(Employee)
+    private readonly employeesRepository: Repository<Employee>,
     @InjectRepository(Customers)
     private readonly customersRepository: Repository<Customers>,
     @InjectRepository(Store)
@@ -30,11 +33,17 @@ export class AuthService {
   /* c8 ignore stop */
 
   async register(registerDto: RegisterDto): Promise<{ accessToken: string }> {
-    const existingUser = await this.customersRepository.findOne({
-      where: { email: registerDto.email },
+
+    const user = await this.usersRepository.findOne({
+      where: [
+        { employee: { email: registerDto.email } },
+        { customer: { email: registerDto.email } },
+      ],
+      relations: { employee: true, store: true, customer: true },
     });
 
-    if (existingUser) {
+
+    if (user) {
       throw new BadRequestException('Email is already in use.');
     }
 
@@ -46,26 +55,40 @@ export class AuthService {
       throw new BadRequestException('Store does not exist.');
     }
 
-    const customer = this.customersRepository.create({
-      name: registerDto.fullName,
-      email: registerDto.email,
-      phone: registerDto.phone, // You might want to add a phone field in the RegisterDto or handle it differently
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    let saveUser: any
+    if (registerDto.role === Role.CLIENT) {
+      saveUser = this.customersRepository.create({
+        name: registerDto.fullName,
+        email: registerDto.email,
+        phone: registerDto.phone, // You might want to add a phone field in the RegisterDto or handle it differently
+        store: store,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }else{
+      saveUser = this.employeesRepository.create({
+        name: registerDto.fullName,
+        email: registerDto.email,
+        phone: registerDto.phone, // You might want to add a phone field in the RegisterDto or handle it differently
+        store: store,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    const user = this.usersRepository.create({
-      customer: customer,
+    const newUser = this.usersRepository.create({
+      customer: registerDto.role === Role.CLIENT ? await this.customersRepository.save(saveUser) : null,
+      employee: registerDto.role !== Role.CLIENT ? await this.employeesRepository.save(saveUser)   : null,
       password: hashedPassword,
       role: registerDto.role ?? Role.CLIENT,
       createdAt: new Date(),
       updatedAt: new Date(),
-      store: store,
+      store: store, // Associate the user with the store
     });
 
-    const savedUser = await this.usersRepository.save(user);
+    const savedUser = await this.usersRepository.save(newUser);
     return { accessToken: await this.signToken(savedUser) };
   }
 
