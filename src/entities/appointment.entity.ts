@@ -7,56 +7,32 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Store } from './store.entity';
-import { User } from './user.entity';
-
-export enum AppointmentStatus {
-  SCHEDULED = 'scheduled',
-  CONFIRMED = 'confirmed',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-}
+import { Customers } from './customer.entity';
+import { AppointmentStatusEnum } from '../enums/appointments.enum';
 
 @Entity('appointments')
 export class Appointment {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id', comment: 'Unique identifier for the appointment' })
+  id: string;
 
-  @ManyToOne(() => Store, (store) => store.appointments, {
-    nullable: false,
-    onDelete: 'CASCADE',
-  })
-  store!: Store;
+  @Column({ name: 'scheduled_at', type: 'timestamp', nullable: false, comment: 'Scheduled date and time of the appointment' })
+  scheduledAt: Date;
 
-  @Column({ type: 'uuid' })
-  storeId!: string;
+  @Column({ name: 'status', type: 'enum', enum: AppointmentStatusEnum, default: AppointmentStatusEnum.SCHEDULED, comment: 'Current status of the appointment' })
+  status: AppointmentStatusEnum;
 
-  @ManyToOne(() => User, (user) => user.clientAppointments, { nullable: false })
-  client!: User;
+  @Column({ name: 'notes', type: 'text', nullable: true, comment: 'Additional notes for the appointment' })
+  notes: string | null;
 
-  @Column({ type: 'uuid' })
-  clientId!: string;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: 'Creation date of the appointment' })
+  createdAt: Date;
 
-  @ManyToOne(() => User, (user) => user.employeeAppointments, { nullable: false })
-  employee!: User;
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: 'Last update date of the appointment' })
+  updatedAt: Date;
 
-  @Column({ type: 'uuid' })
-  employeeId!: string;
-
-  @Column({ type: 'timestamptz' })
-  startsAt!: Date;
-
-  @Column({ type: 'timestamptz' })
-  endsAt!: Date;
-
-  @Column({ type: 'enum', enum: AppointmentStatus, default: AppointmentStatus.SCHEDULED })
-  status!: AppointmentStatus;
-
-  @Column({ type: 'text', nullable: true })
-  notes?: string;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
+  @ManyToOne(() => Customers, (customer) => customer.appointments, { nullable: false, cascade: true })
+  customer: Customers;
+  
+  @ManyToOne(() => Store, (store) => store.appointments, { nullable: false, cascade: true })
+  store: Store;
 }

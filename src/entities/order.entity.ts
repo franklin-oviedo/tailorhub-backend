@@ -8,54 +8,36 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Store } from './store.entity';
-import { User } from './user.entity';
 import { OrderItem } from './order-item.entity';
-
-export enum OrderStatus {
-  PENDING = 'pending',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-}
+import { Customers } from './customer.entity';
+import { OrderStatusEnum } from 'src/enums/order.enum';
 
 @Entity('orders')
 export class Order {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id', comment: 'Unique identifier for the order' })
+  id: string;
 
-  @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
-  status!: OrderStatus;
+  @Column({ name: 'status', type: 'enum', enum: OrderStatusEnum, default: OrderStatusEnum.PENDING, comment: 'Status of the order' })
+  status: OrderStatusEnum;
 
-  @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
-  totalAmount!: number;
+  @Column({ name: 'total_amount', type: 'numeric', precision: 10, scale: 2, default: 0, comment: 'Total amount of the order' })
+  totalAmount: number;
 
-  @ManyToOne(() => Store, (store) => store.orders, { nullable: false, onDelete: 'CASCADE' })
-  store!: Store;
+  @Column({ name: 'notes', type: 'text', nullable: true, comment: 'Additional notes for the order' })
+  notes: string;
 
-  @Column({ type: 'uuid' })
-  storeId!: string;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: 'Creation date of the order' })
+  createdAt: Date;
 
-  @ManyToOne(() => User, (user) => user.customerOrders, { nullable: false })
-  customer!: User;
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: 'Last update date of the order' })
+  updatedAt: Date;
 
-  @Column({ type: 'uuid' })
-  customerId!: string;
+  @ManyToOne(() => Store, (store) => store.orders, { nullable: false, cascade: true })
+  store: Store;
 
-  @ManyToOne(() => User, (user) => user.assignedOrders, { nullable: true })
-  employee?: User;
+  @OneToMany(() => OrderItem, (item) => item.order, { eager: true })
+  items: OrderItem[];
 
-  @Column({ type: 'uuid', nullable: true })
-  employeeId?: string;
-
-  @OneToMany(() => OrderItem, (item) => item.order, { cascade: true, eager: true })
-  items!: OrderItem[];
-
-  @Column({ type: 'text', nullable: true })
-  notes?: string;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
+  @ManyToOne(() => Customers, (customer) => customer.orders, { nullable: false, cascade: true })
+  customer: Customers;
 }

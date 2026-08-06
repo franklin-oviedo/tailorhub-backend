@@ -1,4 +1,4 @@
-import 'reflect-metadata';
+/*import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -461,4 +461,4 @@ bootstrap().catch((error: unknown) => {
   // eslint-disable-next-line no-console
   console.error('Seed failed:', error);
   process.exit(1);
-});
+});*/

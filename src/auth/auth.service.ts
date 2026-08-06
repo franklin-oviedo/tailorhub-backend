@@ -13,6 +13,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Role } from '../common/enums/role.enum';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
+import { Customers } from 'src/entities/customer.entity';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,8 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(Customers)
+    private readonly customersRepository: Repository<Customers>,
     @InjectRepository(Store)
     private readonly storesRepository: Repository<Store>,
     private readonly jwtService: JwtService,
@@ -27,7 +30,7 @@ export class AuthService {
   /* c8 ignore stop */
 
   async register(registerDto: RegisterDto): Promise<{ accessToken: string }> {
-    const existingUser = await this.usersRepository.findOne({
+    const existingUser = await this.customersRepository.findOne({
       where: { email: registerDto.email },
     });
 
@@ -43,15 +46,23 @@ export class AuthService {
       throw new BadRequestException('Store does not exist.');
     }
 
+    const customer = this.customersRepository.create({
+      name: registerDto.fullName,
+      email: registerDto.email,
+      phone: registerDto.phone, // You might want to add a phone field in the RegisterDto or handle it differently
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
     const user = this.usersRepository.create({
-      fullName: registerDto.fullName,
-      email: registerDto.email,
+      customer: customer,
       password: hashedPassword,
       role: registerDto.role ?? Role.CLIENT,
-      store,
-      storeId: store.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      store: store,
     });
 
     const savedUser = await this.usersRepository.save(user);
@@ -59,28 +70,28 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
-    const user = await this.usersRepository.findOne({
+    const customer = await this.customersRepository.findOne({
       where: { email: loginDto.email },
     });
 
-    if (!user) {
+    if (!customer) {
       throw new UnauthorizedException('Invalid credentials.');
     }
 
-    const passwordMatches = await bcrypt.compare(loginDto.password, user.password);
+    const passwordMatches = await bcrypt.compare(loginDto.password, customer.user.password);
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid credentials.');
     }
 
-    return { accessToken: await this.signToken(user) };
+    return { accessToken: await this.signToken(customer.user) };
   }
 
   private async signToken(user: User): Promise<string> {
     const payload: JwtPayload = {
       sub: user.id,
-      email: user.email,
+      email: user.customer.email,
       role: user.role,
-      storeId: user.storeId,
+      storeId: user.store.id,
     };
 
     return this.jwtService.signAsync(payload);

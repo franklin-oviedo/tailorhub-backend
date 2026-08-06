@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Appointment } from '../entities/appointment.entity';
+import { AppointmentStatusEnum } from '../enums/appointments.enum';
 import { User } from '../entities/user.entity';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
@@ -14,6 +15,8 @@ import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Role } from '../common/enums/role.enum';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
+import { Customers } from 'src/entities/customer.entity';
+import { Employee } from 'src/entities/employee.entity';
 
 const isSuperAdmin = (role: Role): boolean => role === Role.SUPER_ADMIN || role === Role.ADMIN;
 
@@ -23,8 +26,10 @@ export class AppointmentsService {
   constructor(
     @InjectRepository(Appointment)
     private readonly appointmentsRepository: Repository<Appointment>,
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    @InjectRepository(Customers)
+    private readonly customersRepository: Repository<Customers>,
+    @InjectRepository(Employee)
+    private readonly employeesRepository: Repository<Employee>,
   ) {}
   /* c8 ignore stop */
 
@@ -32,30 +37,33 @@ export class AppointmentsService {
     createAppointmentDto: CreateAppointmentDto,
     actor: JwtPayload,
   ): Promise<Appointment> {
-    if (createAppointmentDto.endsAt <= createAppointmentDto.startsAt) {
-      throw new BadRequestException('The appointment end time must be after start time.');
+    if (createAppointmentDto.scheduledAt <= new Date()) {
+      throw new BadRequestException('The appointment time must be in the future.');
     }
 
-    const client = await this.usersRepository.findOne({
-      where: { id: createAppointmentDto.clientId },
+    const customer = await this.customersRepository.findOne({
+      where: { id: createAppointmentDto.customerId },
+      relations: ['store'],
     });
-    const employee = await this.usersRepository.findOne({
+    const employee = await this.employeesRepository.findOne({
       where: { id: createAppointmentDto.employeeId },
+      relations: ['store'],
     });
 
-    if (!client || !employee) {
+    if (!customer || !employee) {
       throw new BadRequestException('Client or employee not found.');
     }
 
-    if (client.storeId !== actor.storeId || employee.storeId !== actor.storeId) {
+    if (customer.store.id !== actor.storeId || employee.store.id !== actor.storeId) {
       throw new ForbiddenException('Users must belong to your store.');
     }
 
     const appointment = this.appointmentsRepository.create({
-      ...createAppointmentDto,
-      storeId: actor.storeId,
-      client,
-      employee,
+      scheduledAt: createAppointmentDto.scheduledAt,
+      status: createAppointmentDto.status ?? AppointmentStatusEnum.SCHEDULED,
+      notes: createAppointmentDto.notes ?? null,
+      customer,
+      store: customer.store,
     });
 
     return this.appointmentsRepository.save(appointment);
@@ -71,7 +79,7 @@ export class AppointmentsService {
 
     const qb = this.appointmentsRepository
       .createQueryBuilder('appointment')
-      .leftJoinAndSelect('appointment.client', 'client')
+      .leftJoinAndSelect('appointment.customer', 'customer')
       .leftJoinAndSelect('appointment.employee', 'employee');
 
     if (!isSuperAdmin(actor.role)) {
@@ -83,14 +91,14 @@ export class AppointmentsService {
     }
 
     if (query.from) {
-      qb.andWhere('appointment.startsAt >= :from', { from: query.from.toISOString() });
+      qb.andWhere('appointment.scheduledAt >= :from', { from: query.from.toISOString() });
     }
 
     if (query.to) {
-      qb.andWhere('appointment.startsAt <= :to', { to: query.to.toISOString() });
+      qb.andWhere('appointment.scheduledAt <= :to', { to: query.to.toISOString() });
     }
 
-    qb.orderBy('appointment.startsAt', 'ASC').skip(skip).take(limit);
+    qb.orderBy('appointment.scheduledAt', 'ASC').skip(skip).take(limit);
     const [data, totalItems] = await qb.getManyAndCount();
 
     return {
@@ -107,14 +115,14 @@ export class AppointmentsService {
   async findOne(id: string, actor: JwtPayload): Promise<Appointment> {
     const appointment = await this.appointmentsRepository.findOne({
       where: { id },
-      relations: ['client', 'employee'],
+      relations: ['customer', 'employee', 'store'],
     });
 
     if (!appointment) {
       throw new NotFoundException('Appointment not found.');
     }
 
-    if (!isSuperAdmin(actor.role) && appointment.storeId !== actor.storeId) {
+    if (!isSuperAdmin(actor.role) && appointment.store.id !== actor.storeId) {
       throw new ForbiddenException('You cannot access appointments from another store.');
     }
 
@@ -128,45 +136,26 @@ export class AppointmentsService {
   ): Promise<Appointment> {
     const appointment = await this.findOne(id, actor);
 
-    if (updateAppointmentDto.startsAt && updateAppointmentDto.endsAt) {
-      if (updateAppointmentDto.endsAt <= updateAppointmentDto.startsAt) {
-        throw new BadRequestException('The appointment end time must be after start time.');
+    if (updateAppointmentDto.scheduledAt) {
+      if (updateAppointmentDto.scheduledAt <= new Date()) {
+        throw new BadRequestException('The appointment time must be in the future.');
       }
     }
 
-    if (updateAppointmentDto.clientId) {
-      const client = await this.usersRepository.findOne({
-        where: { id: updateAppointmentDto.clientId },
+    if (updateAppointmentDto.customerId) {
+      const customer = await this.customersRepository.findOne({
+        where: { id: updateAppointmentDto.customerId },
       });
-      if (!client || client.storeId !== actor.storeId) {
-        throw new BadRequestException('Invalid client for this store.');
+      if (!customer || customer.store.id !== actor.storeId) {
+        throw new BadRequestException('Invalid customer for this store.');
       }
-      appointment.client = client;
-      appointment.clientId = client.id;
-    }
-
-    if (updateAppointmentDto.employeeId) {
-      const employee = await this.usersRepository.findOne({
-        where: { id: updateAppointmentDto.employeeId },
-      });
-      if (!employee || employee.storeId !== actor.storeId) {
-        throw new BadRequestException('Invalid employee for this store.');
-      }
-      appointment.employee = employee;
-      appointment.employeeId = employee.id;
+      appointment.customer = customer;
     }
 
     Object.assign(appointment, {
-      startsAt: updateAppointmentDto.startsAt ?? appointment.startsAt,
-      endsAt: updateAppointmentDto.endsAt ?? appointment.endsAt,
-      status: updateAppointmentDto.status ?? appointment.status,
-      notes: updateAppointmentDto.notes ?? appointment.notes,
+      ...updateAppointmentDto,
     });
-
-    if (appointment.endsAt <= appointment.startsAt) {
-      throw new BadRequestException('The appointment end time must be after start time.');
-    }
-
+    
     return this.appointmentsRepository.save(appointment);
   }
 

@@ -13,6 +13,7 @@ import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Role } from '../common/enums/role.enum';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
+import { Customers } from 'src/entities/customer.entity';
 
 const isSuperAdmin = (role: Role): boolean => role === Role.SUPER_ADMIN || role === Role.ADMIN;
 
@@ -22,13 +23,16 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(Customers)
+    private readonly customersRepository: Repository<Customers>,
+    
   ) {}
   /* c8 ignore stop */
 
   findMyProfile(userId: string) {
     return this.usersRepository.findOne({
       where: { id: userId },
-      select: ['id', 'fullName', 'email', 'role', 'storeId', 'createdAt', 'updatedAt'],
+      relations: ['store', 'customer', 'employee'],
     });
   }
 
@@ -83,14 +87,14 @@ export class UsersService {
   async findOne(id: string, actor: JwtPayload): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      select: ['id', 'fullName', 'email', 'role', 'storeId', 'createdAt', 'updatedAt'],
+      relations: ['store', 'customer', 'employee'],
     });
 
     if (!user) {
       throw new NotFoundException('User not found.');
     }
 
-    if (!isSuperAdmin(actor.role) && user.storeId !== actor.storeId) {
+    if (!isSuperAdmin(actor.role) && user.store.id !== actor.storeId) {
       throw new ForbiddenException('You cannot access users from another store.');
     }
 
@@ -105,11 +109,11 @@ export class UsersService {
 
     if (!isSuperAdmin(actor.role)) {
       if (actor.role === Role.MANAGER) {
-        if (user.storeId !== actor.storeId) {
+        if (user.store.id !== actor.storeId) {
           throw new ForbiddenException('Managers can only update users from their store.');
         }
 
-        if (updateUserDto.storeId && updateUserDto.storeId !== user.storeId) {
+        if (updateUserDto.storeId && updateUserDto.storeId !== user.store.id) {
           throw new ForbiddenException('Managers cannot move users across stores.');
         }
 
@@ -125,17 +129,17 @@ export class UsersService {
           throw new ForbiddenException('You cannot update your role.');
         }
 
-        if (updateUserDto.storeId && updateUserDto.storeId !== user.storeId) {
+        if (updateUserDto.storeId && updateUserDto.storeId !== user.store.id) {
           throw new ForbiddenException('You cannot move users across stores.');
         }
       }
     }
 
-    if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const emailExists = await this.usersRepository.findOne({
+    if (updateUserDto.email && updateUserDto.email !== user.customer.email) {
+      const customerEmail = await this.customersRepository.findOne({
         where: { email: updateUserDto.email },
       });
-      if (emailExists) {
+      if (customerEmail) {
         throw new BadRequestException('Email is already in use.');
       }
     }
@@ -156,7 +160,7 @@ export class UsersService {
 
     if (!isSuperAdmin(actor.role)) {
       if (actor.role === Role.MANAGER) {
-        if (user.storeId !== actor.storeId) {
+        if (user.store.id !== actor.storeId) {
           throw new ForbiddenException('Managers can only delete users from their store.');
         }
 

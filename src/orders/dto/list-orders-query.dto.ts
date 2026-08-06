@@ -1,13 +1,13 @@
 import { IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
-import { OrderStatus } from '../../entities/order.entity';
+import { OrderStatusEnum } from '../../enums/order.enum';
 
 export class ListOrdersQueryDto extends PaginationQueryDto {
-  @ApiPropertyOptional({ enum: OrderStatus })
+  @ApiPropertyOptional({ enum: OrderStatusEnum })
   @IsOptional()
-  @IsEnum(OrderStatus)
-  status?: OrderStatus;
+  @IsEnum(OrderStatusEnum)
+  status?: OrderStatusEnum;
 
   @ApiPropertyOptional({ format: 'uuid', description: 'Filter orders by customer id' })
   @IsOptional()

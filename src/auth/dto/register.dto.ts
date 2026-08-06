@@ -11,6 +11,10 @@ export class RegisterDto {
   @IsEmail()
   email!: string;
 
+  @ApiProperty({ example: '(809) 123-4567' })
+  @IsString()
+  phone!: string;
+
   @ApiProperty({ minLength: 8, example: 'MyS3curePass!' })
   @IsString()
   @MinLength(8)
@@ -23,5 +27,5 @@ export class RegisterDto {
   @ApiPropertyOptional({ enum: Role, default: Role.CLIENT, description: 'Defaults to client.' })
   @IsOptional()
   @IsEnum(Role)
-  role?: Role;
+  role: Role;
 }

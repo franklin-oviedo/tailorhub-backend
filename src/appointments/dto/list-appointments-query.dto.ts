@@ -2,13 +2,13 @@ import { Type } from 'class-transformer';
 import { IsDate, IsEnum, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
-import { AppointmentStatus } from '../../entities/appointment.entity';
+import { AppointmentStatusEnum } from '../../enums/appointments.enum';
 
 export class ListAppointmentsQueryDto extends PaginationQueryDto {
-  @ApiPropertyOptional({ enum: AppointmentStatus })
+  @ApiPropertyOptional({ enum: AppointmentStatusEnum })
   @IsOptional()
-  @IsEnum(AppointmentStatus)
-  status?: AppointmentStatus;
+  @IsEnum(AppointmentStatusEnum)
+  status?: AppointmentStatusEnum;
 
   @ApiPropertyOptional({
     type: String,

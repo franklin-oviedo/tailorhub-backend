@@ -3,56 +3,41 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  OneToOne,
 } from 'typeorm';
 import { Store } from './store.entity';
-import { Order } from './order.entity';
-import { Appointment } from './appointment.entity';
 import { Role } from '../common/enums/role.enum';
+import { Customers } from './customer.entity';
+import { Employee } from './employee.entity';
+import { JoinColumn } from 'typeorm';
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id', comment: 'Unique identifier for the user' })
+  id: string;
 
-  @Column({ length: 120 })
-  fullName!: string;
+  @Column({ name: 'password', length: 255,  nullable: false, comment: 'Password of the user' })
+  password: string;
 
-  @Column({ unique: true, length: 160 })
-  email!: string;
+  @Column({ name: 'role', type: 'enum', enum: Role, default: Role.CLIENT, comment: 'Role of the user' })
+  role: Role;
 
-  @Column({ length: 255 })
-  password!: string;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: 'Creation date of the user' })
+  createdAt: Date;
 
-  @Column({ type: 'enum', enum: Role, default: Role.CLIENT })
-  role!: Role;
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: 'Last update date of the user' })
+  updatedAt: Date;
 
-  @ManyToOne(() => Store, (store) => store.users, { nullable: false, onDelete: 'CASCADE' })
-  store!: Store;
+  @OneToOne(() => Customers, (customer) => customer.user, { nullable: true })
+  @JoinColumn({ name: 'customer_id' })
+  customer: Customers;
 
-  @Column({ type: 'uuid' })
-  storeId!: string;
+  @ManyToOne(() => Store, (store) => store.users, { nullable: false, cascade: true })
+  store: Store;
 
-  @OneToMany(() => Order, (order) => order.customer)
-  customerOrders!: Order[];
-
-  @OneToMany(() => Order, (order) => order.employee)
-  assignedOrders!: Order[];
-
-  @OneToMany(() => Appointment, (appointment) => appointment.client)
-  clientAppointments!: Appointment[];
-
-  @OneToMany(() => Appointment, (appointment) => appointment.employee)
-  employeeAppointments!: Appointment[];
-
-  @OneToMany(() => Store, (store) => store.manager)
-  managedStores!: Store[];
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
+  @OneToOne(() => Employee, (employee) => employee.user, { nullable: true, cascade: true })
+  @JoinColumn({ name: 'employee_id' })
+  employee: Employee;
 }

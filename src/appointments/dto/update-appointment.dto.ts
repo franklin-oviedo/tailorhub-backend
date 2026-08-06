@@ -7,13 +7,13 @@ import {
   IsUUID,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { AppointmentStatus } from '../../entities/appointment.entity';
+import { AppointmentStatusEnum } from '../../enums/appointments.enum';
 
 export class UpdateAppointmentDto {
   @ApiPropertyOptional({ format: 'uuid', example: '55555555-5555-5555-5555-555555555555' })
   @IsOptional()
   @IsUUID()
-  clientId?: string;
+  customerId?: string;
 
   @ApiPropertyOptional({ format: 'uuid', example: '66666666-6666-6666-6666-666666666666' })
   @IsOptional()
@@ -24,18 +24,12 @@ export class UpdateAppointmentDto {
   @IsOptional()
   @Type(() => Date)
   @IsDate()
-  startsAt?: Date;
+  scheduledAt?: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time', example: '2026-08-10T16:30:00.000Z' })
+  @ApiPropertyOptional({ enum: AppointmentStatusEnum, example: AppointmentStatusEnum.CONFIRMED })
   @IsOptional()
-  @Type(() => Date)
-  @IsDate()
-  endsAt?: Date;
-
-  @ApiPropertyOptional({ enum: AppointmentStatus, example: AppointmentStatus.CONFIRMED })
-  @IsOptional()
-  @IsEnum(AppointmentStatus)
-  status?: AppointmentStatus;
+  @IsEnum(AppointmentStatusEnum)
+  status?: AppointmentStatusEnum;
 
   @ApiPropertyOptional({ example: 'Cliente confirmado para ajuste final.' })
   @IsOptional()

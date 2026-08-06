@@ -9,27 +9,21 @@ import { Product } from './product.entity';
 
 @Entity('order_items')
 export class OrderItem {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id', comment: 'Unique identifier for the order item' })
+  id: string;
 
-  @ManyToOne(() => Order, (order) => order.items, { nullable: false, onDelete: 'CASCADE' })
-  order!: Order;
+  @Column({ name: 'quantity', type: 'int', comment: 'Quantity of the product in the order item' })
+  quantity: number;
 
-  @Column({ type: 'uuid' })
-  orderId!: string;
+  @Column({ name: 'unit_price', type: 'numeric', precision: 10, scale: 2, comment: 'Unit price of the product in the order item' })
+  unitPrice: number;
+
+  @Column({ name: 'subtotal', type: 'numeric', precision: 10, scale: 2, comment: 'Subtotal amount for the order item' })
+  subtotal: number;
+
+  @ManyToOne(() => Order, (order) => order.items, { nullable: false, cascade: true })
+  order: Order;
 
   @ManyToOne(() => Product, (product) => product.orderItems, { nullable: false })
-  product!: Product;
-
-  @Column({ type: 'uuid' })
-  productId!: string;
-
-  @Column({ type: 'int' })
-  quantity!: number;
-
-  @Column({ type: 'numeric', precision: 10, scale: 2 })
-  unitPrice!: number;
-
-  @Column({ type: 'numeric', precision: 10, scale: 2 })
-  subtotal!: number;
+  product: Product;
 }

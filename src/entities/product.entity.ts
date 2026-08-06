@@ -12,33 +12,30 @@ import { OrderItem } from './order-item.entity';
 
 @Entity('products')
 export class Product {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id', comment: 'Unique identifier for the product' })
+  id: string;
 
-  @Column({ length: 120 })
-  name!: string;
+  @Column({ name: 'name', length: 120, nullable: false, comment: 'Name of the product' })
+  name: string;
 
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+  @Column({ name: 'description', type: 'text', nullable: true, comment: 'Description of the product' })
+  description: string;
 
-  @Column({ type: 'numeric', precision: 10, scale: 2 })
-  price!: number;
+  @Column({ name: 'price', type: 'numeric', precision: 10, scale: 2, nullable: false, comment: 'Price of the product' })
+  price: number;
 
-  @Column({ default: true })
-  isActive!: boolean;
+  @Column({ name: 'is_active', default: true, nullable: false, comment: 'Indicates if the product is active' })
+  isActive: boolean;
 
-  @ManyToOne(() => Store, (store) => store.products, { nullable: false, onDelete: 'CASCADE' })
-  store!: Store;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: 'Creation date of the product' })
+  createdAt: Date;
 
-  @Column({ type: 'uuid' })
-  storeId!: string;
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: 'Last update date of the product' })
+  updatedAt: Date;
 
-  @OneToMany(() => OrderItem, (item) => item.product)
-  orderItems!: OrderItem[];
+  @ManyToOne(() => Store, (store) => store.products, { nullable: false, cascade: true })
+  store: Store;
 
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
+  @OneToMany(() => OrderItem, (item) => item.product, { nullable: false, cascade: true })
+  orderItems: OrderItem[];
 }

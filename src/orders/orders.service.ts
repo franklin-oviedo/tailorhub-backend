@@ -6,7 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Order, OrderStatus } from '../entities/order.entity';
+import { Order } from '../entities/order.entity';
+import { OrderStatusEnum } from '../enums/order.enum';
 import { OrderItem } from '../entities/order-item.entity';
 import { Product } from '../entities/product.entity';
 import { User } from '../entities/user.entity';
@@ -16,6 +17,7 @@ import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Role } from '../common/enums/role.enum';
 import { ListOrdersQueryDto } from './dto/list-orders-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
+import { Customers } from 'src/entities/customer.entity';
 
 const isSuperAdmin = (role: Role): boolean => role === Role.SUPER_ADMIN || role === Role.ADMIN;
 
@@ -31,11 +33,13 @@ export class OrdersService {
     private readonly productsRepository: Repository<Product>,
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(Customers)
+    private readonly customersRepository: Repository<Customers>,
   ) {}
   /* c8 ignore stop */
 
   async create(createOrderDto: CreateOrderDto, actor: JwtPayload): Promise<Order> {
-    const customer = await this.usersRepository.findOne({
+    const customer = await this.customersRepository.findOne({
       where: { id: createOrderDto.customerId },
     });
 
@@ -43,23 +47,8 @@ export class OrdersService {
       throw new BadRequestException('Customer not found.');
     }
 
-    if (customer.storeId !== actor.storeId) {
+    if (customer.store.id !== actor.storeId) {
       throw new ForbiddenException('Customer belongs to another store.');
-    }
-
-    let employee: User | null = null;
-    if (createOrderDto.employeeId) {
-      employee = await this.usersRepository.findOne({
-        where: { id: createOrderDto.employeeId },
-      });
-
-      if (!employee) {
-        throw new BadRequestException('Employee not found.');
-      }
-
-      if (employee.storeId !== actor.storeId) {
-        throw new ForbiddenException('Employee belongs to another store.');
-      }
     }
 
     const items: OrderItem[] = [];
@@ -74,7 +63,7 @@ export class OrdersService {
         throw new BadRequestException(`Product ${itemDto.productId} not found.`);
       }
 
-      if (product.storeId !== actor.storeId) {
+      if (product.store.id !== actor.storeId) {
         throw new ForbiddenException('You cannot add products from another store.');
       }
 
@@ -86,7 +75,6 @@ export class OrdersService {
       items.push(
         this.orderItemsRepository.create({
           product,
-          productId: product.id,
           quantity: itemDto.quantity,
           unitPrice,
           subtotal,
@@ -95,15 +83,11 @@ export class OrdersService {
     }
 
     const order = this.ordersRepository.create({
-      storeId: actor.storeId,
       customer,
-      customerId: customer.id,
-      employee: employee ?? undefined,
-      employeeId: employee?.id,
-      notes: createOrderDto.notes,
-      status: OrderStatus.PENDING,
-      totalAmount: Number(totalAmount.toFixed(2)),
       items,
+      totalAmount: Number(totalAmount.toFixed(2)),
+      notes: createOrderDto.notes,
+      status: OrderStatusEnum.PENDING,
     });
 
     return this.ordersRepository.save(order);
@@ -117,7 +101,6 @@ export class OrdersService {
     const qb = this.ordersRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.customer', 'customer')
-      .leftJoinAndSelect('order.employee', 'employee');
 
     if (!isSuperAdmin(actor.role)) {
       qb.andWhere('order.storeId = :storeId', { storeId: actor.storeId });
@@ -148,14 +131,14 @@ export class OrdersService {
   async findOne(id: string, actor: JwtPayload): Promise<Order> {
     const order = await this.ordersRepository.findOne({
       where: { id },
-      relations: ['customer', 'employee'],
+      relations: ['customer', 'store'],
     });
 
     if (!order) {
       throw new NotFoundException('Order not found.');
     }
 
-    if (!isSuperAdmin(actor.role) && order.storeId !== actor.storeId) {
+    if (!isSuperAdmin(actor.role) && order.store.id !== actor.storeId) {
       throw new ForbiddenException('You cannot access orders from another store.');
     }
 

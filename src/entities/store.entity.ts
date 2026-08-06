@@ -12,57 +12,50 @@ import { Product } from './product.entity';
 import { Order } from './order.entity';
 import { Appointment } from './appointment.entity';
 import { Plan } from './plan.entity';
+import { Employee } from './employee.entity';
+import { Customers } from './customer.entity';
 
 @Entity('stores')
 export class Store {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id', comment: 'Unique identifier for the store' })
+  id: string;
 
-  @Column({ length: 120 })
-  name!: string;
+  @Column({ name: 'name', length: 120, nullable: false, comment: 'Name of the store' })
+  name: string;
 
-  @Column({ unique: true, length: 160 })
-  email!: string;
+  @Column({ name: 'email', type: 'varchar', unique: true, length: 160, nullable: true, comment: 'Email of the store' })
+  email: string | null;
 
-  @Column({ nullable: true, length: 30 })
-  phone?: string;
+  @Column({ name: 'phone', nullable: true, length: 30, comment: 'Phone number of the store' })
+  phone: string;
 
-  @Column({ nullable: true, length: 255 })
-  address?: string;
+  @Column({ name: 'address', type: 'varchar', nullable: true, length: 255, comment: 'Address of the store' })
+  address: string | null;
 
-  @ManyToOne(() => User, (user) => user.managedStores, {
-    nullable: true,
-    onDelete: 'SET NULL',
-  })
-  manager?: User;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: 'Creation date of the store' })
+  createdAt: Date;
 
-  @Column({ type: 'uuid', nullable: true })
-  managerId?: string;
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: 'Last update date of the store' })
+  updatedAt: Date;
 
-  @ManyToOne(() => Plan, (plan) => plan.stores, {
-    nullable: true,
-    onDelete: 'SET NULL',
-  })
-  plan?: Plan;
-
-  @Column({ type: 'uuid', nullable: true })
-  planId?: string;
+  @ManyToOne(() => Plan, (plan) => plan.stores, { nullable: true, cascade: true })
+  plan: Plan | null;
 
   @OneToMany(() => User, (user) => user.store)
-  users!: User[];
+  users: User[];
 
-  @OneToMany(() => Product, (product) => product.store)
-  products!: Product[];
+  @OneToMany(() => Product, (product) => product.store, { nullable: false })
+  products: Product[];
 
-  @OneToMany(() => Order, (order) => order.store)
-  orders!: Order[];
+  @OneToMany(() => Order, (order) => order.store, { nullable: false })
+  orders: Order[];
 
-  @OneToMany(() => Appointment, (appointment) => appointment.store)
-  appointments!: Appointment[];
+  @OneToMany(() => Appointment, (appointment) => appointment.store, { nullable: false })
+  appointments: Appointment[];
 
-  @CreateDateColumn()
-  createdAt!: Date;
+  @OneToMany(() => Customers, (customer) => customer.store, { nullable: false, cascade: true })
+  customers: Customers[];
 
-  @UpdateDateColumn()
-  updatedAt!: Date;
+  @OneToMany(() => Employee, (employee) => employee.store, { nullable: false, cascade: true })
+  employees: Employee[];
 }

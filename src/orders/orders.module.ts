@@ -7,9 +7,10 @@ import { OrderItem } from '../entities/order-item.entity';
 import { Product } from '../entities/product.entity';
 import { User } from '../entities/user.entity';
 import { PlanPermissionsGuard } from '../common/guards/plan-permissions.guard';
+import { Customers } from 'src/entities/customer.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, OrderItem, Product, User])],
+  imports: [TypeOrmModule.forFeature([Order, OrderItem, Product, User, Customers])],
   providers: [OrdersService, PlanPermissionsGuard],
   controllers: [OrdersController],
   exports: [OrdersService],

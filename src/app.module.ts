@@ -19,6 +19,9 @@ import { Plan } from './entities/plan.entity';
 import { Permission } from './entities/permission.entity';
 import { PlansModule } from './plans/plans.module';
 import { PermissionsModule } from './permissions/permissions.module';
+import { Customers } from './entities/customer.entity';
+import { CustomerMeasurement } from './entities/customer-measurements.entity';
+import { Employee } from './entities/employee.entity';
 
 @Module({
   imports: [
@@ -37,7 +40,19 @@ import { PermissionsModule } from './permissions/permissions.module';
           return {
             type: 'postgres' as const,
             url: databaseUrl,
-            entities: [Store, User, Product, Order, OrderItem, Appointment, Plan, Permission],
+            entities: [
+              Store,
+              User,
+              Product,
+              Order,
+              OrderItem,
+              Appointment,
+              Plan,
+              Permission,
+              Customers,
+              CustomerMeasurement,
+              Employee
+            ],
             synchronize: shouldSynchronize,
             ssl: isProduction ? { rejectUnauthorized: false } : false,
           };
@@ -50,8 +65,20 @@ import { PermissionsModule } from './permissions/permissions.module';
           username: configService.get<string>('DB_USERNAME', 'postgres'),
           password: configService.get<string>('DB_PASSWORD', 'postgres'),
           database: configService.get<string>('DB_NAME', 'tailorhub'),
-          entities: [Store, User, Product, Order, OrderItem, Appointment, Plan, Permission],
-          synchronize: shouldSynchronize,
+          entities: [
+            Store,
+            User,
+            Product,
+            Order,
+            OrderItem,
+            Appointment,
+            Plan,
+            Permission,
+            Customers,
+            CustomerMeasurement,
+            Employee
+          ],
+          synchronize: true,
           ssl: isProduction ? { rejectUnauthorized: false } : false,
         };
       },
@@ -68,4 +95,4 @@ import { PermissionsModule } from './permissions/permissions.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
