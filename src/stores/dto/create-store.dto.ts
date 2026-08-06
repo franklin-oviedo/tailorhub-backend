@@ -10,19 +10,18 @@ export class CreateStoreDto {
   @ApiProperty({ maxLength: 160, example: 'contacto@atelier.com' })
   @IsEmail()
   @MaxLength(160)
-  email!: string;
-
-  @ApiPropertyOptional({ maxLength: 30, example: '+52 55 1234 5678' })
   @IsOptional()
+  email?: string;
+
+  @ApiPropertyOptional({ maxLength: 30, example: '(809) 123-4567' })
   @IsString()
   @MaxLength(30)
-  phone?: string;
+  phone: string;
 
   @ApiPropertyOptional({ maxLength: 255, example: 'Av. Reforma 100, CDMX' })
-  @IsOptional()
   @IsString()
   @MaxLength(255)
-  address?: string;
+  address: string;
 
   @ApiPropertyOptional({
     format: 'uuid',

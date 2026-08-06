@@ -22,11 +22,14 @@ export class StoresService {
 
   async create(createStoreDto: CreateStoreDto): Promise<Store> {
     const existingStore = await this.storesRepository.findOne({
-      where: { email: createStoreDto.email },
+      where: [
+        { phone: createStoreDto.phone },
+        { email: createStoreDto.email },
+      ],
     });
 
     if (existingStore) {
-      throw new BadRequestException('A store with that email already exists.');
+      throw new BadRequestException('A store with that phone already exists.');
     }
 
     const store = this.storesRepository.create(createStoreDto);
@@ -73,13 +76,21 @@ export class StoresService {
   async update(id: string, updateStoreDto: UpdateStoreDto): Promise<Store> {
     const store = await this.findOne(id);
 
-    if (updateStoreDto.email && updateStoreDto.email !== store.email) {
+    if (updateStoreDto.email && updateStoreDto.email !== store.email || updateStoreDto.phone && updateStoreDto.phone !== store.phone) {
       const existingStore = await this.storesRepository.findOne({
-        where: { email: updateStoreDto.email },
+        where: [
+          { email: updateStoreDto.email },
+          { phone: updateStoreDto.phone },
+        ],
       });
 
       if (existingStore) {
-        throw new BadRequestException('A store with that email already exists.');
+        if (existingStore.email === updateStoreDto.email) {
+          throw new BadRequestException('A store with that email already exists.');
+        }
+        if (existingStore.phone === updateStoreDto.phone) {
+          throw new BadRequestException('A store with that phone already exists.');
+        }
       }
     }
 

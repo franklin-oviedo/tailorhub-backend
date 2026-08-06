@@ -20,17 +20,17 @@ export class Store {
   @PrimaryGeneratedColumn('uuid', { name: 'id', comment: 'Unique identifier for the store' })
   id: string;
 
-  @Column({ name: 'name', length: 120, nullable: false, comment: 'Name of the store' })
+  @Column({ name: 'name', length: 120, unique: true, nullable: false, comment: 'Name of the store' })
   name: string;
 
   @Column({ name: 'email', type: 'varchar', unique: true, length: 160, nullable: true, comment: 'Email of the store' })
   email: string | null;
 
-  @Column({ name: 'phone', nullable: true, length: 30, comment: 'Phone number of the store' })
+  @Column({ name: 'phone', nullable: false, length: 30, comment: 'Phone number of the store' })
   phone: string;
 
-  @Column({ name: 'address', type: 'varchar', nullable: true, length: 255, comment: 'Address of the store' })
-  address: string | null;
+  @Column({ name: 'address', type: 'varchar', nullable: false, length: 255, comment: 'Address of the store' })
+  address: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: 'Creation date of the store' })
   createdAt: Date;
@@ -44,18 +44,18 @@ export class Store {
   @OneToMany(() => User, (user) => user.store)
   users: User[];
 
-  @OneToMany(() => Product, (product) => product.store, { nullable: false })
+  @OneToMany(() => Product, (product) => product.store)
   products: Product[];
 
-  @OneToMany(() => Order, (order) => order.store, { nullable: false })
+  @OneToMany(() => Order, (order) => order.store)
   orders: Order[];
 
-  @OneToMany(() => Appointment, (appointment) => appointment.store, { nullable: false })
+  @OneToMany(() => Appointment, (appointment) => appointment.store)
   appointments: Appointment[];
 
-  @OneToMany(() => Customers, (customer) => customer.store, { nullable: false, cascade: true })
+  @OneToMany(() => Customers, (customer) => customer.store)
   customers: Customers[];
 
-  @OneToMany(() => Employee, (employee) => employee.store, { nullable: false, cascade: true })
+  @OneToMany(() => Employee, (employee) => employee.store)
   employees: Employee[];
 }
