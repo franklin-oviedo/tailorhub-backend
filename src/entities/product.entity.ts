@@ -33,7 +33,7 @@ export class Product {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: 'Last update date of the product' })
   updatedAt: Date;
 
-  @ManyToOne(() => Store, (store) => store.products, { nullable: false, cascade: true })
+  @ManyToOne(() => Store, (store) => store.products)
   store: Store;
 
   @OneToMany(() => OrderItem, (item) => item.product, { nullable: false, cascade: true })

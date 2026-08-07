@@ -41,6 +41,7 @@ export class OrdersService {
   async create(createOrderDto: CreateOrderDto, actor: JwtPayload): Promise<Order> {
     const customer = await this.customersRepository.findOne({
       where: { id: createOrderDto.customerId },
+      relations: { store: true },
     });
 
     if (!customer) {
@@ -57,6 +58,7 @@ export class OrdersService {
     for (const itemDto of createOrderDto.items) {
       const product = await this.productsRepository.findOne({
         where: { id: itemDto.productId },
+        relations: { store: true },
       });
 
       if (!product) {
@@ -88,6 +90,9 @@ export class OrdersService {
       totalAmount: Number(totalAmount.toFixed(2)),
       notes: createOrderDto.notes,
       status: OrderStatusEnum.PENDING,
+      store: customer.store,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     return this.ordersRepository.save(order);
@@ -131,7 +136,7 @@ export class OrdersService {
   async findOne(id: string, actor: JwtPayload): Promise<Order> {
     const order = await this.ordersRepository.findOne({
       where: { id },
-      relations: ['customer', 'store'],
+      relations:{ store: true, customer: true, items: { product: true } },
     });
 
     if (!order) {

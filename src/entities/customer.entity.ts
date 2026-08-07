@@ -28,15 +28,15 @@ export class Customers {
     @OneToOne(() => User, (user) => user.customer, { nullable: false, cascade: true })
     user: User;
 
-    @OneToMany(() => Order, (order) => order.customer, { nullable: true })
+    @OneToMany(() => Order, (order) => order.customer, { nullable: true, cascade: true })
     orders: Order[];
 
     @OneToOne(() => CustomerMeasurement, (measurement) => measurement.customer, { nullable: true, cascade: true })
     measurements: CustomerMeasurement;
 
-    @OneToMany(() => Appointment, (appointment) => appointment.customer, { nullable: true })
+    @OneToMany(() => Appointment, (appointment) => appointment.customer, { nullable: true, cascade: true })
     appointments: Appointment[];
 
-    @ManyToOne(() => Store, (store) => store.customers, { nullable: false,  })
+    @ManyToOne(() => Store, (store) => store.customers)
     store: Store;
 }

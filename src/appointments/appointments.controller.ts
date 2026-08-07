@@ -45,7 +45,7 @@ export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.CLIENT)
   @Permissions(ModulePermission.APPOINTMENTS_MANAGE)
   @ApiOperation({ summary: 'Create appointment' })
   @ApiBody({ type: CreateAppointmentDto })

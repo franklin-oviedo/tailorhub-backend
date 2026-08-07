@@ -15,10 +15,6 @@ export class CreateAppointmentDto {
   @IsUUID()
   customerId!: string;
 
-  @ApiProperty({ format: 'uuid', example: '66666666-6666-6666-6666-666666666666' })
-  @IsUUID()
-  employeeId!: string;
-
   @ApiProperty({ type: String, format: 'date-time', example: '2026-08-10T15:00:00.000Z' })
   @Type(() => Date)
   @IsDate()

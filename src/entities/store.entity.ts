@@ -38,24 +38,24 @@ export class Store {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: 'Last update date of the store' })
   updatedAt: Date;
 
-  @ManyToOne(() => Plan, (plan) => plan.stores, { nullable: true, cascade: true })
+  @ManyToOne(() => Plan, (plan) => plan.stores)
   plan: Plan | null;
 
-  @OneToMany(() => User, (user) => user.store)
+  @OneToMany(() => User, (user) => user.store, { nullable: false, cascade: true })
   users: User[];
 
-  @OneToMany(() => Product, (product) => product.store)
+  @OneToMany(() => Product, (product) => product.store, { nullable: false, cascade: true })
   products: Product[];
 
-  @OneToMany(() => Order, (order) => order.store)
+  @OneToMany(() => Order, (order) => order.store, { nullable: false, cascade: true })
   orders: Order[];
 
-  @OneToMany(() => Appointment, (appointment) => appointment.store)
+  @OneToMany(() => Appointment, (appointment) => appointment.store, { nullable: false, cascade: true })
   appointments: Appointment[];
 
-  @OneToMany(() => Customers, (customer) => customer.store)
+  @OneToMany(() => Customers, (customer) => customer.store, { nullable: false, cascade: true })
   customers: Customers[];
 
-  @OneToMany(() => Employee, (employee) => employee.store)
+  @OneToMany(() => Employee, (employee) => employee.store, { nullable: false, cascade: true })
   employees: Employee[];
 }

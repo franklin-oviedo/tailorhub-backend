@@ -32,12 +32,12 @@ export class Order {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: 'Last update date of the order' })
   updatedAt: Date;
 
-  @ManyToOne(() => Store, (store) => store.orders, { nullable: false, cascade: true })
+  @ManyToOne(() => Store, (store) => store.orders, { nullable: false })
   store: Store;
 
-  @OneToMany(() => OrderItem, (item) => item.order, { eager: true })
+  @OneToMany(() => OrderItem, (item) => item.order, { nullable: false, cascade: true })
   items: OrderItem[];
 
-  @ManyToOne(() => Customers, (customer) => customer.orders, { nullable: false, cascade: true })
+  @ManyToOne(() => Customers, (customer) => customer.orders, { nullable: false })
   customer: Customers;
 }

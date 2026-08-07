@@ -30,9 +30,9 @@ export class Appointment {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: 'Last update date of the appointment' })
   updatedAt: Date;
 
-  @ManyToOne(() => Customers, (customer) => customer.appointments, { nullable: false, cascade: true })
+  @ManyToOne(() => Customers, (customer) => customer.appointments, { nullable: false })
   customer: Customers;
   
-  @ManyToOne(() => Store, (store) => store.appointments, { nullable: false, cascade: true })
+  @ManyToOne(() => Store, (store) => store.appointments)
   store: Store;
 }

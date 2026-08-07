@@ -34,7 +34,7 @@ export class User {
   @JoinColumn({ name: 'customer_id' })
   customer: Customers;
 
-  @ManyToOne(() => Store, (store) => store.users, { nullable: false, cascade: true })
+  @ManyToOne(() => Store, (store) => store.users)
   store: Store;
 
   @OneToOne(() => Employee, (employee) => employee.user, { nullable: true, cascade: true })

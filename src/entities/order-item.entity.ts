@@ -21,7 +21,7 @@ export class OrderItem {
   @Column({ name: 'subtotal', type: 'numeric', precision: 10, scale: 2, comment: 'Subtotal amount for the order item' })
   subtotal: number;
 
-  @ManyToOne(() => Order, (order) => order.items, { nullable: false, cascade: true })
+  @ManyToOne(() => Order, (order) => order.items, { nullable: false })
   order: Order;
 
   @ManyToOne(() => Product, (product) => product.orderItems, { nullable: false })

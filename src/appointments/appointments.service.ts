@@ -16,7 +16,6 @@ import { Role } from '../common/enums/role.enum';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
 import { Customers } from 'src/entities/customer.entity';
-import { Employee } from 'src/entities/employee.entity';
 
 const isSuperAdmin = (role: Role): boolean => role === Role.SUPER_ADMIN || role === Role.ADMIN;
 
@@ -28,8 +27,6 @@ export class AppointmentsService {
     private readonly appointmentsRepository: Repository<Appointment>,
     @InjectRepository(Customers)
     private readonly customersRepository: Repository<Customers>,
-    @InjectRepository(Employee)
-    private readonly employeesRepository: Repository<Employee>,
   ) {}
   /* c8 ignore stop */
 
@@ -41,20 +38,19 @@ export class AppointmentsService {
       throw new BadRequestException('The appointment time must be in the future.');
     }
 
+    console.log('Actor:', actor);
+    console.log('Create Appointment DTO:', createAppointmentDto);
     const customer = await this.customersRepository.findOne({
       where: { id: createAppointmentDto.customerId },
-      relations: ['store'],
-    });
-    const employee = await this.employeesRepository.findOne({
-      where: { id: createAppointmentDto.employeeId },
-      relations: ['store'],
+      relations: { store: true },
     });
 
-    if (!customer || !employee) {
-      throw new BadRequestException('Client or employee not found.');
+    console.log('Customer:', customer);
+    if (!customer) {
+      throw new BadRequestException('Client not found.');
     }
 
-    if (customer.store.id !== actor.storeId || employee.store.id !== actor.storeId) {
+    if (customer.store.id !== actor.storeId ) {
       throw new ForbiddenException('Users must belong to your store.');
     }
 
@@ -80,7 +76,7 @@ export class AppointmentsService {
     const qb = this.appointmentsRepository
       .createQueryBuilder('appointment')
       .leftJoinAndSelect('appointment.customer', 'customer')
-      .leftJoinAndSelect('appointment.employee', 'employee');
+      .leftJoinAndSelect('appointment.store', 'store')
 
     if (!isSuperAdmin(actor.role)) {
       qb.andWhere('appointment.storeId = :storeId', { storeId: actor.storeId });
@@ -115,7 +111,7 @@ export class AppointmentsService {
   async findOne(id: string, actor: JwtPayload): Promise<Appointment> {
     const appointment = await this.appointmentsRepository.findOne({
       where: { id },
-      relations: ['customer', 'employee', 'store'],
+      relations: { customer: true, store: true },
     });
 
     if (!appointment) {
@@ -143,13 +139,14 @@ export class AppointmentsService {
     }
 
     if (updateAppointmentDto.customerId) {
-      const customer = await this.customersRepository.findOne({
-        where: { id: updateAppointmentDto.customerId },
+      const customer = await this.appointmentsRepository.findOne({
+        where: { customer: { id: updateAppointmentDto.customerId } },
+        relations: { customer: true, store: true },
       });
       if (!customer || customer.store.id !== actor.storeId) {
         throw new BadRequestException('Invalid customer for this store.');
       }
-      appointment.customer = customer;
+      appointment.customer = customer.customer;
     }
 
     Object.assign(appointment, {

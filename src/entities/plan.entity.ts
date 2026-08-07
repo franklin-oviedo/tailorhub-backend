@@ -31,10 +31,7 @@ export class Plan {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: 'Last update date of the plan' })
   updatedAt: Date;
 
-  @ManyToMany(() => Permission, (permission) => permission.plans, {
-    cascade: false,
-    eager: true,
-  })
+  @ManyToMany(() => Permission, (permission) => permission.plans)
   @JoinTable({
     name: 'plan_permissions',
     joinColumn: { name: 'plan_id', referencedColumnName: 'id' },
@@ -42,6 +39,6 @@ export class Plan {
   })
   permissions!: Permission[];
 
-  @OneToMany(() => Store, (store) => store.plan)
+  @OneToMany(() => Store, (store) => store.plan, { nullable: true, cascade: true })
   stores!: Store[];
 }

@@ -11,14 +11,8 @@ import { AppointmentStatusEnum } from '../../enums/appointments.enum';
 
 export class UpdateAppointmentDto {
   @ApiPropertyOptional({ format: 'uuid', example: '55555555-5555-5555-5555-555555555555' })
-  @IsOptional()
   @IsUUID()
-  customerId?: string;
-
-  @ApiPropertyOptional({ format: 'uuid', example: '66666666-6666-6666-6666-666666666666' })
-  @IsOptional()
-  @IsUUID()
-  employeeId?: string;
+  customerId: string;
 
   @ApiPropertyOptional({ type: String, format: 'date-time', example: '2026-08-10T15:30:00.000Z' })
   @IsOptional()

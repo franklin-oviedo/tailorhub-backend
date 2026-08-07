@@ -25,16 +25,7 @@ export class CreateOrderItemDto {
 export class CreateOrderDto {
   @ApiProperty({ format: 'uuid', example: '33333333-3333-3333-3333-333333333333' })
   @IsUUID()
-  customerId!: string;
-
-  @ApiPropertyOptional({
-    format: 'uuid',
-    example: '44444444-4444-4444-4444-444444444444',
-    description: 'Assigned employee id',
-  })
-  @IsOptional()
-  @IsUUID()
-  employeeId?: string;
+  customerId: string;
 
   @ApiProperty({
     type: [CreateOrderItemDto],
@@ -45,7 +36,7 @@ export class CreateOrderDto {
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => CreateOrderItemDto)
-  items!: CreateOrderItemDto[];
+  items: CreateOrderItemDto[];
 
   @ApiPropertyOptional({ example: 'Entrega para el viernes en la tarde.' })
   @IsOptional()

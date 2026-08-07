@@ -25,6 +25,6 @@ export class Permission {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', comment: 'Last update date of the permission' })
   updatedAt: Date;
 
-  @ManyToMany(() => Plan, (plan) => plan.permissions)
+  @ManyToMany(() => Plan, (plan) => plan.permissions, { nullable: true, cascade: true })
   plans: Plan[];
 }
