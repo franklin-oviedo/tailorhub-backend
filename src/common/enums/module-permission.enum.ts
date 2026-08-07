@@ -5,4 +5,6 @@ export enum ModulePermission {
   ORDERS_MANAGE = 'orders.manage',
   APPOINTMENTS_MANAGE = 'appointments.manage',
   REPORTS_VIEW = 'reports.view',
+  CUSTOMER_MEASUREMENTS_MANAGE = 'customer_measurements.manage',
+  CUSTOMER_MEASUREMENTS_VIEW = 'customer_measurements.view',
 }
