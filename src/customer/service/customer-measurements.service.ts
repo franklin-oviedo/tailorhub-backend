@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateCustomerMeasurementDto } from './dto/create-customer-measurement.dto';
-import { UpdateCustomerMeasurementDto } from './dto/update-customer-measurement.dto';
+import { CreateCustomerMeasurementDto } from '../dto/create-customer-measurement.dto';
+import { UpdateCustomerMeasurementDto } from '../dto/update-customer-measurement.dto';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Role } from 'src/common/enums/role.enum';
 import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';

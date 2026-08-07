@@ -22,7 +22,7 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { Customers } from './entities/customer.entity';
 import { CustomerMeasurement } from './entities/customer-measurements.entity';
 import { Employee } from './entities/employee.entity';
-import { CustomerMeasurementsModule } from './customer-measurements/customer-measurements.module';
+import { CustomersModule } from './customer/customers.module';
 
 @Module({
   imports: [
@@ -92,7 +92,7 @@ import { CustomerMeasurementsModule } from './customer-measurements/customer-mea
     AppointmentsModule,
     PlansModule,
     PermissionsModule,
-    CustomerMeasurementsModule,
+    CustomersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,8 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { CustomerMeasurementsService } from './customer-measurements.service';
-import { CreateCustomerMeasurementDto } from './dto/create-customer-measurement.dto';
-import { UpdateCustomerMeasurementDto } from './dto/update-customer-measurement.dto';
+import { CustomerMeasurementsService } from '../service/customer-measurements.service';
+import { CreateCustomerMeasurementDto } from '../dto/create-customer-measurement.dto';
+import { UpdateCustomerMeasurementDto } from '../dto/update-customer-measurement.dto';
 import { PlanPermissionsGuard } from 'src/common/guards/plan-permissions.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -14,7 +14,7 @@ import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiForbidd
 import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 
-@Controller('customer-measurements')
+@Controller('customer/customer-measurements')
 @UseGuards(JwtAuthGuard, RolesGuard, PlanPermissionsGuard)
 @ApiTags('Customer Measurements')
 @ApiBearerAuth('access-token')
