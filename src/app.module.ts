@@ -23,6 +23,7 @@ import { Customers } from './entities/customer.entity';
 import { CustomerMeasurement } from './entities/customer-measurements.entity';
 import { Employee } from './entities/employee.entity';
 import { CustomersModule } from './customer/customers.module';
+import { EmployeeModule } from './employee/employee.module';
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { CustomersModule } from './customer/customers.module';
     PlansModule,
     PermissionsModule,
     CustomersModule,
+    EmployeeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

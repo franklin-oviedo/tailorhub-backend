@@ -13,8 +13,14 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 export class CustomersController {
     constructor(private readonly customersService: CustomersService) {}
 
+    @Get()
+    getAllCustomer(){
+        return this.customersService.getAllCustomer()
+    }
+
     @Get(':id')
     getCustomerById(@Param('id') id: string) {
         return this.customersService.getCustomerById(id);
     }
+
 }
