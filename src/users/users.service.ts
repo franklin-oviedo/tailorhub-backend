@@ -44,16 +44,10 @@ export class UsersService {
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const qb = this.usersRepository
-      .createQueryBuilder('user')
-      .select([
-        'user.id',
-        'user.fullName',
-        'user.email',
-        'user.role',
-        'user.createdAt',
-        'user.updatedAt',
-      ]).innerJoinAndSelect('user.store', 'store');
+    const qb = this.usersRepository.createQueryBuilder('user')
+      .leftJoinAndSelect('user.store', 'store')
+      .leftJoinAndSelect('user.customer', 'customer')
+      .leftJoinAndSelect('user.employee', 'employee');
 
     if (!isSuperAdmin(actor.role)) {
       qb.andWhere('user.storeId = :storeId', { storeId: actor.storeId });
