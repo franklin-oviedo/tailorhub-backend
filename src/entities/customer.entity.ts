@@ -4,6 +4,7 @@ import { User } from "./user.entity";
 import { Appointment } from './appointment.entity';
 import { Order } from './order.entity';
 import { Store } from "./store.entity";
+import { Invoice } from "./invoice.entity";
 
 @Entity('customers')
 export class Customers {
@@ -39,4 +40,7 @@ export class Customers {
 
     @ManyToOne(() => Store, (store) => store.customers)
     store: Store;
+
+    @OneToMany(() => Invoice, (invoice) => invoice.customer, { nullable: true, cascade: true })
+    invoices: Invoice[];
 }
