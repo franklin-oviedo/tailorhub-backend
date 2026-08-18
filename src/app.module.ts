@@ -24,6 +24,7 @@ import { CustomerMeasurement } from './entities/customer-measurements.entity';
 import { Employee } from './entities/employee.entity';
 import { CustomersModule } from './customer/customers.module';
 import { EmployeeModule } from './employee/employee.module';
+import { InvoiceModule } from './invoice/invoice.module';
 
 @Module({
   imports: [
@@ -95,6 +96,7 @@ import { EmployeeModule } from './employee/employee.module';
     PermissionsModule,
     CustomersModule,
     EmployeeModule,
+    InvoiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
