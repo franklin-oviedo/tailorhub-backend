@@ -60,6 +60,6 @@ export class Store {
   @OneToMany(() => Employee, (employee) => employee.store, { nullable: false, cascade: true })
   employees: Employee[];
 
-  @OneToMany(() => Invoice, (invoice) => invoice.store, { nullable: true, cascade: true })
+  @OneToMany(() => Invoice, (invoice) => invoice.store, { nullable: true })
   invoices: Invoice[];
 }

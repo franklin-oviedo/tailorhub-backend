@@ -10,7 +10,7 @@ import {
 import { Store } from './store.entity';
 import { OrderItem } from './order-item.entity';
 import { Customers } from './customer.entity';
-import { OrderStatusEnum } from 'src/enums/order.enum';
+import { OrderStatusEnum } from '../enums/order.enum';
 import { Invoice } from './invoice.entity';
 
 @Entity('orders')
@@ -42,6 +42,6 @@ export class Order {
   @ManyToOne(() => Customers, (customer) => customer.orders, { nullable: false })
   customer: Customers;
 
-  @OneToMany(() => Invoice, (invoice) => invoice.order, { nullable: true, cascade: true })
-  invoice: Invoice[];
+  @OneToMany(() => Invoice, (invoice) => invoice.order, { nullable: true })
+  invoices: Invoice[];
 }

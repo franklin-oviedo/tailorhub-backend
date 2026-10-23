@@ -17,7 +17,7 @@ import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Role } from '../common/enums/role.enum';
 import { ListOrdersQueryDto } from './dto/list-orders-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
-import { Customers } from 'src/entities/customer.entity';
+import { Customers } from '../entities/customer.entity';
 
 const isSuperAdmin = (role: Role): boolean => role === Role.SUPER_ADMIN || role === Role.ADMIN;
 

@@ -41,6 +41,6 @@ export class Customers {
     @ManyToOne(() => Store, (store) => store.customers)
     store: Store;
 
-    @OneToMany(() => Invoice, (invoice) => invoice.customer, { nullable: true, cascade: true })
+    @OneToMany(() => Invoice, (invoice) => invoice.customer, { nullable: true })
     invoices: Invoice[];
 }

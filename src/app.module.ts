@@ -25,6 +25,11 @@ import { Employee } from './entities/employee.entity';
 import { CustomersModule } from './customer/customers.module';
 import { EmployeeModule } from './employee/employee.module';
 import { InvoiceModule } from './invoice/invoice.module';
+import { Invoice } from './entities/invoice.entity';
+import { InvoiceItem } from './entities/invoice-item.entity';
+import { InvoicePayment } from './entities/invoice-payment.entity';
+import { CreditNote } from './entities/credit-note.entity';
+import { DebitNote } from './entities/debit-note.entity';
 
 @Module({
   imports: [
@@ -36,8 +41,11 @@ import { InvoiceModule } from './invoice/invoice.module';
       useFactory: (configService: ConfigService) => {
         const databaseUrl = configService.get<string>('DATABASE_URL');
         const isProduction = configService.get<string>('NODE_ENV') === 'production';
+        const synchronizeOverride = configService.get<string>('DB_SYNCHRONIZE');
         const shouldSynchronize =
-          configService.get<string>('DB_SYNCHRONIZE', 'false') === 'true';
+          synchronizeOverride !== undefined
+            ? synchronizeOverride === 'true'
+            : !isProduction;
 
         if (databaseUrl) {
           return {
@@ -54,7 +62,12 @@ import { InvoiceModule } from './invoice/invoice.module';
               Permission,
               Customers,
               CustomerMeasurement,
-              Employee
+              Employee,
+              Invoice,
+              InvoiceItem,
+              InvoicePayment,
+              CreditNote,
+              DebitNote,
             ],
             synchronize: shouldSynchronize,
             ssl: isProduction ? { rejectUnauthorized: false } : false,
@@ -79,9 +92,14 @@ import { InvoiceModule } from './invoice/invoice.module';
             Permission,
             Customers,
             CustomerMeasurement,
-            Employee
+            Employee,
+            Invoice,
+            InvoiceItem,
+            InvoicePayment,
+            CreditNote,
+            DebitNote,
           ],
-          synchronize: true,
+          synchronize: shouldSynchronize,
           ssl: isProduction ? { rejectUnauthorized: false } : false,
         };
       },
