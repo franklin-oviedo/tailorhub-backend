@@ -20,9 +20,23 @@ import { Employee } from 'src/entities/employee.entity';
         const expiresInSeconds = Number(
           configService.get<string>('JWT_EXPIRES_IN_SECONDS', '86400'),
         );
+        const nodeEnv = (process.env.NODE_ENV ?? 'development').toLowerCase();
+        const isProduction = nodeEnv === 'production';
+        const jwtSecret = configService.get<string>('JWT_SECRET');
+
+        if (!jwtSecret && isProduction) {
+          throw new Error('JWT_SECRET must be configured in production environments.');
+        }
+
+        if (!jwtSecret && !isProduction) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            'JWT_SECRET is not set. Falling back to a development-only secret. Configure a real secret in production.',
+          );
+        }
 
         return {
-          secret: configService.get<string>('JWT_SECRET', 'dev-only-secret'),
+          secret: jwtSecret ?? 'development-secret-change-me',
           signOptions: {
             expiresIn: Number.isNaN(expiresInSeconds) ? 86400 : expiresInSeconds,
           },

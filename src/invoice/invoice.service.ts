@@ -676,7 +676,11 @@ export class InvoiceService {
 
       const newBalance = this.normalizeAmount(invoice.balance - amount);
       invoice.balance = newBalance <= 0 ? 0 : newBalance;
-      await manager.getRepository(Invoice).save(invoice);
+
+      await manager.getRepository(Invoice).update(invoice.id, {
+        status: invoice.status,
+        balance: invoice.balance,
+      });
 
       return invoice.id;
     });

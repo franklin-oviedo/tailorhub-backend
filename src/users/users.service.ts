@@ -96,14 +96,17 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto, actor: JwtPayload): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { id } });
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['store', 'customer', 'employee'],
+    });
     if (!user) {
       throw new NotFoundException('User not found.');
     }
 
     if (!isSuperAdmin(actor.role)) {
       if (actor.role === Role.MANAGER) {
-        if (user.store.id !== actor.storeId) {
+        if (!user.store || user.store.id !== actor.storeId) {
           throw new ForbiddenException('Managers can only update users from their store.');
         }
 
@@ -123,13 +126,13 @@ export class UsersService {
           throw new ForbiddenException('You cannot update your role.');
         }
 
-        if (updateUserDto.storeId && updateUserDto.storeId !== user.store.id) {
+        if (updateUserDto.storeId && (!user.store || updateUserDto.storeId !== user.store.id)) {
           throw new ForbiddenException('You cannot move users across stores.');
         }
       }
     }
 
-    if (updateUserDto.email && updateUserDto.email !== user.customer.email) {
+    if (updateUserDto.email && user.customer && updateUserDto.email !== user.customer.email) {
       const customerEmail = await this.customersRepository.findOne({
         where: { email: updateUserDto.email },
       });
@@ -139,7 +142,7 @@ export class UsersService {
     }
 
     if (updateUserDto.password) {
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 12);
     }
 
     Object.assign(user, updateUserDto);
@@ -147,14 +150,17 @@ export class UsersService {
   }
 
   async remove(id: string, actor: JwtPayload): Promise<void> {
-    const user = await this.usersRepository.findOne({ where: { id } });
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['store', 'customer', 'employee'],
+    });
     if (!user) {
       throw new NotFoundException('User not found.');
     }
 
     if (!isSuperAdmin(actor.role)) {
       if (actor.role === Role.MANAGER) {
-        if (user.store.id !== actor.storeId) {
+        if (!user.store || user.store.id !== actor.storeId) {
           throw new ForbiddenException('Managers can only delete users from their store.');
         }
 

@@ -872,4 +872,41 @@ describe('InvoiceService', () => {
       status: InvoiceStatusEnum.PAID,
     });
   });
+
+  it('TEST 14 - should update invoice status and balance without persisting loaded credit notes', async () => {
+    const invoice = {
+      id: 'inv-1',
+      store: { id: 'store-1' },
+      status: InvoiceStatusEnum.ISSUED,
+      total: 100,
+      balance: 100,
+      creditNotes: [{ id: 'credit-1', amount: 10, reason: 'old' }],
+    };
+
+    managerInvoiceRepo.findOne
+      .mockResolvedValueOnce(invoice)
+      .mockResolvedValueOnce(invoice);
+    jest.spyOn(service, 'findOne').mockResolvedValue({ id: 'inv-1' } as never);
+
+    await service.createCreditNote(
+      'inv-1',
+      { reason: 'price correction', amount: 25 },
+      actor as never,
+    );
+
+    expect(managerCreditNoteRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: 'price correction',
+        amount: 25,
+        invoice: expect.objectContaining({ id: 'inv-1' }),
+      }),
+    );
+    expect(managerInvoiceRepo.update).toHaveBeenCalledWith('inv-1', {
+      status: InvoiceStatusEnum.ISSUED,
+      balance: 75,
+    });
+    expect(managerInvoiceRepo.save).not.toHaveBeenCalledWith(
+      expect.objectContaining({ creditNotes: expect.anything() }),
+    );
+  });
 });

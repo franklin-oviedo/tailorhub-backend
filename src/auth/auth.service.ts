@@ -13,8 +13,8 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Role } from '../common/enums/role.enum';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
-import { Customers } from 'src/entities/customer.entity';
-import { Employee } from 'src/entities/employee.entity';
+import { Customers } from '../entities/customer.entity';
+import { Employee } from '../entities/employee.entity';
 
 @Injectable()
 export class AuthService {
@@ -33,6 +33,11 @@ export class AuthService {
   /* c8 ignore stop */
 
   async register(registerDto: RegisterDto): Promise<{ accessToken: string }> {
+    const requestedRole = registerDto.role ?? Role.CLIENT;
+
+    if (requestedRole !== Role.CLIENT) {
+      throw new BadRequestException('Public registration only allows the client role.');
+    }
 
     const user = await this.usersRepository.findOne({
       where: [
@@ -41,7 +46,6 @@ export class AuthService {
       ],
       relations: { employee: true, store: true, customer: true },
     });
-
 
     if (user) {
       throw new BadRequestException('Email is already in use.');
@@ -55,37 +59,24 @@ export class AuthService {
       throw new BadRequestException('Store does not exist.');
     }
 
-    let saveUser: any
-    if (registerDto.role === Role.CLIENT) {
-      saveUser = this.customersRepository.create({
-        name: registerDto.fullName,
-        email: registerDto.email,
-        phone: registerDto.phone, // You might want to add a phone field in the RegisterDto or handle it differently
-        store: store,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-    }else{
-      saveUser = this.employeesRepository.create({
-        name: registerDto.fullName,
-        email: registerDto.email,
-        phone: registerDto.phone, // You might want to add a phone field in the RegisterDto or handle it differently
-        store: store,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-
-    const newUser = this.usersRepository.create({
-      customer: registerDto.role === Role.CLIENT ? await this.customersRepository.save(saveUser) : null,
-      employee: registerDto.role !== Role.CLIENT ? await this.employeesRepository.save(saveUser)   : null,
-      password: hashedPassword,
-      role: registerDto.role ?? Role.CLIENT,
+    const customer = this.customersRepository.create({
+      name: registerDto.fullName,
+      email: registerDto.email,
+      phone: registerDto.phone,
+      store,
       createdAt: new Date(),
       updatedAt: new Date(),
-      store: store, // Associate the user with the store
+    });
+
+    const hashedPassword = await bcrypt.hash(registerDto.password, 12);
+
+    const newUser = this.usersRepository.create({
+      customer: await this.customersRepository.save(customer),
+      password: hashedPassword,
+      role: Role.CLIENT,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      store,
     });
 
     const savedUser = await this.usersRepository.save(newUser);
@@ -114,11 +105,14 @@ export class AuthService {
   }
 
   private async signToken(user: User): Promise<string> {
+    const email = user.customer?.email ?? user.employee?.email ?? (user as User & { email?: string }).email ?? '';
+    const storeId = user.store?.id ?? (user as User & { storeId?: string }).storeId ?? '';
+
     const payload: JwtPayload = {
       sub: user.id,
-      email: user.customer?.email ?? user.employee?.email,
+      email,
       role: user.role,
-      storeId: user.store.id,
+      storeId,
     };
 
     return this.jwtService.signAsync(payload);

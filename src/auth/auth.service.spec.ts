@@ -7,6 +7,8 @@ import { Repository } from 'typeorm';
 import { Role } from '../common/enums/role.enum';
 import { Store } from '../entities/store.entity';
 import { User } from '../entities/user.entity';
+import { Customers } from '../entities/customer.entity';
+import { Employee } from '../entities/employee.entity';
 import { AuthService } from './auth.service';
 
 jest.mock('bcrypt', () => ({
@@ -18,6 +20,8 @@ describe('AuthService', () => {
   let service: AuthService;
   let usersRepository: jest.Mocked<Repository<User>>;
   let storesRepository: jest.Mocked<Repository<Store>>;
+  let customersRepository: jest.Mocked<Repository<Customers>>;
+  let employeeRepository: jest.Mocked<Repository<Employee>>;
   let jwtService: jest.Mocked<JwtService>;
 
   beforeEach(async () => {
@@ -28,6 +32,20 @@ describe('AuthService', () => {
           provide: getRepositoryToken(User),
           useValue: {
             findOne: jest.fn(),
+            create: jest.fn(),
+            save: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(Employee),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(Customers),
+          useValue: {
             create: jest.fn(),
             save: jest.fn(),
           },
@@ -50,6 +68,8 @@ describe('AuthService', () => {
     service = module.get<AuthService>(AuthService);
     usersRepository = module.get(getRepositoryToken(User));
     storesRepository = module.get(getRepositoryToken(Store));
+    customersRepository = module.get(getRepositoryToken(Customers));
+    employeeRepository = module.get(getRepositoryToken(Employee));
     jwtService = module.get(JwtService);
   });
 
@@ -80,7 +100,11 @@ describe('AuthService', () => {
 
     expect(result).toEqual({ accessToken: 'jwt-token' });
     expect(usersRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ email: dto.email, password: 'hashed-password', storeId: 'store-1' }),
+      expect.objectContaining({
+        password: 'hashed-password',
+        role: Role.CLIENT,
+        store: expect.objectContaining({ id: 'store-1' }),
+      }),
     );
   });
 
@@ -134,7 +158,7 @@ describe('AuthService', () => {
       email: 'user@test.com',
       password: 'hash',
       role: Role.ADMIN,
-      storeId: 'store-1',
+      store: { id: 'store-1' },
     } as User;
     usersRepository.findOne.mockResolvedValue(user);
     (bcrypt.compare as jest.Mock).mockResolvedValue(true);
@@ -168,5 +192,22 @@ describe('AuthService', () => {
     expect(usersRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({ role: Role.CLIENT }),
     );
+  });
+
+  it('rejects privileged roles during public registration', async () => {
+    usersRepository.findOne.mockResolvedValue(null);
+    storesRepository.findOne.mockResolvedValue({ id: 'store-1' } as Store);
+
+    await expect(
+      service.register({
+        fullName: 'Privileged User',
+        email: 'manager@test.com',
+        password: 'password123',
+        storeId: 'store-1',
+        role: Role.MANAGER,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(usersRepository.create).not.toHaveBeenCalled();
   });
 });

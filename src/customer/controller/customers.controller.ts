@@ -61,7 +61,7 @@ export class CustomersController {
     @ApiOkResponse({ description: 'Customer updated successfully.' })
     @ApiBadRequestResponse({ description: 'Validation error or customer not found.' })
     updateCustomer(
-        @Param('id') id: string,
+        @Param('id') id: string, 
         @Body() updateCustomerDto: UpdateCustomerDto,
         @CurrentUser() user: JwtPayload,
     ) {
