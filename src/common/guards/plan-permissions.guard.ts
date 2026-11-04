@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { ModulePermission } from '../enums/module-permission.enum';
 import { Role } from '../enums/role.enum';
@@ -19,6 +19,8 @@ import { User } from '../../entities/user.entity';
 export class PlanPermissionsGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
+    @Optional()
+    private readonly dataSource?: DataSource,
     @Optional()
     @InjectRepository(User)
     private readonly usersRepository?: Repository<User>,
@@ -45,7 +47,9 @@ export class PlanPermissionsGuard implements CanActivate {
       return true;
     }
 
-    if (!this.usersRepository) {
+    const usersRepository = this.usersRepository ?? this.dataSource?.getRepository(User);
+
+    if (!usersRepository) {
       if (process.env.NODE_ENV === 'test') {
         return true;
       }
@@ -53,17 +57,17 @@ export class PlanPermissionsGuard implements CanActivate {
       throw new ForbiddenException('Plan permissions guard is not properly configured.');
     }
 
-    const user = await this.usersRepository.findOne({
+    const user = await usersRepository.findOne({
       where: { id: authUser.sub },
       relations: ['store', 'store.plan', 'store.plan.permissions'],
     });
 
     const grantedPermissions = user?.store?.plan?.permissions?.map((permission) => permission.name) ?? [];
-    const hasAllPermissions = requiredPermissions.every((permission) =>
+    const hasAtLeastOnePermission = requiredPermissions.some((permission) =>
       grantedPermissions.includes(permission),
     );
 
-    if (!hasAllPermissions) {
+    if (!hasAtLeastOnePermission) {
       throw new ForbiddenException('Your subscription plan does not include this module.');
     }
 

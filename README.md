@@ -26,6 +26,8 @@ DB_USERNAME=postgres
 DB_PASSWORD=postgres
 DB_NAME=tailorhub
 JWT_SECRET=replace-with-a-strong-secret
+SUPER_ADMIN_EMAIL=superadmin@tailorhub.local
+SUPER_ADMIN_PASSWORD=TailorHub123!
 PORT=3000
 NODE_ENV=development
 CORS_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
@@ -39,6 +41,15 @@ Example for Angular local dev:
 
 - `http://localhost:4200`
 - `http://127.0.0.1:4200`
+
+## Super admin protection
+
+On every app startup, backend ensures there is always one `super_admin` user in the database.
+
+- If it does not exist, it is created automatically using the `SUPER_ADMIN_*` environment variables.
+- Core `permissions` and a default `plan` are also auto-created/updated at startup.
+- Direct deletes of `super_admin` are blocked.
+- `TRUNCATE users` is blocked at database level to avoid removing `super_admin`.
 
 ## Local PostgreSQL with Docker
 
@@ -111,6 +122,16 @@ Paginated responses include:
 - `403`: permission or cross-store access denied
 - `404`: resource not found
 
+### Users management
+
+`users` module supports:
+
+- Create users (`POST /api/users`)
+- Edit users (`PATCH /api/users/:id`)
+- Disable users (`PATCH /api/users/:id/disable`)
+
+Disabled users cannot log in.
+
 ### Frontend recommendation
 
 Generate typed client models from `docs-json` (OpenAPI) so request/response contracts stay synchronized with backend DTOs.
@@ -140,14 +161,14 @@ It seeds all main tables with demo data:
 
 - `stores`
 - `users`
-- `products`
+- `services`
 - `orders`
 - `order_items`
 - `appointments`
 
 Demo business data includes:
 
-- 3 products
+- 3 services
 - 3 orders with different statuses (`pending`, `in_progress`, `completed`)
 - 3 appointments with different statuses (`scheduled`, `confirmed`, `completed`)
 

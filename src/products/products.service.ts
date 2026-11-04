@@ -16,13 +16,17 @@ import { PaginatedResult } from '../common/types/paginated-result.type';
 const isSuperAdmin = (role: Role): boolean => role === Role.SUPER_ADMIN || role === Role.ADMIN;
 
 @Injectable()
-export class ProductsService {
+export class ServicesService {
   /* c8 ignore start */
   constructor(
     @InjectRepository(Product)
     private readonly productsRepository: Repository<Product>,
   ) {}
   /* c8 ignore stop */
+
+  private resolveProductStoreId(product: Product): string | undefined {
+    return product.store?.id ?? (product as Product & { storeId?: string }).storeId;
+  }
 
   create(createProductDto: CreateProductDto, actor: JwtPayload): Promise<Product> {
     const product = this.productsRepository.create({
@@ -73,13 +77,17 @@ export class ProductsService {
   }
 
   async findOne(id: string, actor: JwtPayload): Promise<Product> {
-    const product = await this.productsRepository.findOne({ where: { id } });
+    const product = await this.productsRepository.findOne({
+      where: { id },
+      relations: ['store'],
+    });
     if (!product) {
       throw new NotFoundException('Product not found.');
     }
 
-    if (!isSuperAdmin(actor.role) && product.store.id !== actor.storeId) {
-      throw new ForbiddenException('You cannot access products from another store.');
+    const targetStoreId = this.resolveProductStoreId(product);
+    if (!isSuperAdmin(actor.role) && targetStoreId !== actor.storeId) {
+      throw new ForbiddenException('You cannot access services from another store.');
     }
 
     return product;

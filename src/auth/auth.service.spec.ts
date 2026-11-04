@@ -172,6 +172,19 @@ describe('AuthService', () => {
     );
   });
 
+  it('throws when user is disabled', async () => {
+    usersRepository.findOne.mockResolvedValue({
+      id: 'u1',
+      password: 'hash',
+      role: Role.CLIENT,
+      isActive: false,
+    } as User);
+
+    await expect(
+      service.login({ email: 'disabled@test.com', password: 'password123' }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
   it('uses default client role when register role is not provided', async () => {
     const dto = {
       fullName: 'No Role',

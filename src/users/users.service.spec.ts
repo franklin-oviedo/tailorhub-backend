@@ -4,6 +4,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Role } from '../common/enums/role.enum';
+import { Customers } from '../entities/customer.entity';
+import { Employee } from '../entities/employee.entity';
+import { Store } from '../entities/store.entity';
 import { User } from '../entities/user.entity';
 import { UsersService } from './users.service';
 
@@ -15,6 +18,9 @@ jest.mock('bcrypt', () => ({
 describe('UsersService', () => {
   let service: UsersService;
   let usersRepository: jest.Mocked<Repository<User>>;
+  let customersRepository: jest.Mocked<Repository<Customers>>;
+  let employeesRepository: jest.Mocked<Repository<Employee>>;
+  let storesRepository: jest.Mocked<Repository<Store>>;
 
   const actor = {
     sub: 'user-1',
@@ -34,6 +40,28 @@ describe('UsersService', () => {
             save: jest.fn(),
             remove: jest.fn(),
             createQueryBuilder: jest.fn(),
+            create: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(Customers),
+          useValue: {
+            findOne: jest.fn(),
+            create: jest.fn(),
+            save: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(Employee),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(Store),
+          useValue: {
+            findOne: jest.fn(),
           },
         },
       ],
@@ -41,11 +69,15 @@ describe('UsersService', () => {
 
     service = module.get<UsersService>(UsersService);
     usersRepository = module.get(getRepositoryToken(User));
+    customersRepository = module.get(getRepositoryToken(Customers));
+    employeesRepository = module.get(getRepositoryToken(Employee));
+    storesRepository = module.get(getRepositoryToken(Store));
   });
 
   const createQb = () => {
     const qb = {
       select: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
@@ -67,6 +99,59 @@ describe('UsersService', () => {
     await expect(service.findOne('missing', actor)).rejects.toBeInstanceOf(NotFoundException);
   });
 
+  it('creates an employee user for manager in own store', async () => {
+    const managerActor = {
+      sub: 'manager-1',
+      email: 'manager@test.com',
+      role: Role.MANAGER,
+      storeId: 'store-1',
+    };
+
+    const dto = {
+      fullName: 'Employee Demo',
+      email: 'employee@tailorhub.com',
+      phone: '+57 300 000 1111',
+      password: 'An0therPass!',
+      role: Role.EMPLOYEE,
+    };
+
+    storesRepository.findOne.mockResolvedValue({ id: 'store-1' } as Store);
+    usersRepository.findOne.mockResolvedValue(null);
+    (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
+    employeesRepository.create.mockReturnValue({ id: 'emp-1' } as Employee);
+    employeesRepository.save.mockResolvedValue({ id: 'emp-1' } as Employee);
+    usersRepository.create.mockReturnValue({ id: 'u2' } as User);
+    usersRepository.save.mockResolvedValue({ id: 'u2' } as User);
+
+    const created = await service.create(dto, managerActor);
+
+    expect(created.id).toBe('u2');
+    expect(storesRepository.findOne).toHaveBeenCalledWith({ where: { id: 'store-1' } });
+    expect(usersRepository.save).toHaveBeenCalled();
+  });
+
+  it('throws ForbiddenException when manager tries to create admin user', async () => {
+    const managerActor = {
+      sub: 'manager-1',
+      email: 'manager@test.com',
+      role: Role.MANAGER,
+      storeId: 'store-1',
+    };
+
+    await expect(
+      service.create(
+        {
+          fullName: 'Admin Demo',
+          email: 'admin2@tailorhub.com',
+          phone: '+57 300 000 2222',
+          password: 'An0therPass!',
+          role: Role.ADMIN,
+        },
+        managerActor,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
   it('throws ForbiddenException for cross-store user access', async () => {
     usersRepository.findOne.mockResolvedValue({ id: 'u2', storeId: 'other-store' } as User);
 
@@ -85,7 +170,12 @@ describe('UsersService', () => {
   });
 
   it('throws BadRequestException when updating to an already used email', async () => {
-    const target = { id: 'user-1', email: 'old@test.com', role: Role.EMPLOYEE, storeId: 'store-1' } as User;
+    const target = {
+      id: 'user-1',
+      role: Role.EMPLOYEE,
+      storeId: 'store-1',
+      customer: { email: 'old@test.com' },
+    } as User;
     usersRepository.findOne
       .mockResolvedValueOnce(target)
       .mockResolvedValueOnce({ id: 'another' } as User);
@@ -93,6 +183,7 @@ describe('UsersService', () => {
     await expect(service.update('user-1', { email: 'taken@test.com' }, actor)).rejects.toBeInstanceOf(
       BadRequestException,
     );
+    expect(usersRepository.findOne).toHaveBeenCalledTimes(2);
   });
 
   it('returns paginated users with filters', async () => {
@@ -180,6 +271,20 @@ describe('UsersService', () => {
     await service.findAll(adminActor, {} as any);
 
     expect(qb.orderBy).toHaveBeenCalled();
+  });
+
+  it('applies store filter when manager lists users', async () => {
+    const qb = createQb();
+    const managerActor = {
+      sub: 'manager-1',
+      email: 'manager@test.com',
+      role: Role.MANAGER,
+      storeId: 'store-1',
+    };
+
+    await service.findAll(managerActor, {} as any);
+
+    expect(qb.andWhere).toHaveBeenCalledWith('user.storeId = :storeId', { storeId: 'store-1' });
   });
 
   it('returns my profile with selected fields', async () => {
@@ -334,5 +439,42 @@ describe('UsersService', () => {
     usersRepository.findOne.mockResolvedValue(target);
 
     await expect(service.remove('user-2', managerActor)).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('disables user and employee profile', async () => {
+    const adminActor = {
+      sub: 'admin-1',
+      email: 'admin@test.com',
+      role: Role.ADMIN,
+      storeId: 'store-1',
+    };
+    const target = {
+      id: 'user-2',
+      role: Role.EMPLOYEE,
+      isActive: true,
+      storeId: 'store-1',
+      employee: { id: 'emp-1', active: true },
+    } as User;
+    usersRepository.findOne.mockResolvedValue(target);
+    employeesRepository.save.mockResolvedValue({ id: 'emp-1', active: false } as Employee);
+    usersRepository.save.mockResolvedValue({ ...target, isActive: false } as User);
+
+    await service.disable('user-2', adminActor);
+
+    expect(employeesRepository.save).toHaveBeenCalledWith(expect.objectContaining({ active: false }));
+    expect(usersRepository.save).toHaveBeenCalledWith(expect.objectContaining({ isActive: false }));
+  });
+
+  it('throws ForbiddenException when disabling super admin', async () => {
+    const adminActor = {
+      sub: 'admin-1',
+      email: 'admin@test.com',
+      role: Role.ADMIN,
+      storeId: 'store-1',
+    };
+
+    usersRepository.findOne.mockResolvedValue({ id: 'user-2', role: Role.SUPER_ADMIN } as User);
+
+    await expect(service.disable('user-2', adminActor)).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

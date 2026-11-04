@@ -96,6 +96,10 @@ export class AuthService {
       throw new UnauthorizedException('User not found.');
     }
 
+    if (user.isActive === false) {
+      throw new UnauthorizedException('User account is disabled.');
+    }
+
     const passwordMatches = await bcrypt.compare(loginDto.password, user.password);
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid credentials.');

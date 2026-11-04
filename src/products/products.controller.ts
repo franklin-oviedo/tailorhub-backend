@@ -21,7 +21,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ProductsService } from './products.service';
+import { ServicesService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -36,56 +36,56 @@ import { PlanPermissionsGuard } from '../common/guards/plan-permissions.guard';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { ModulePermission } from '../common/enums/module-permission.enum';
 
-@Controller('products')
+@Controller('services')
 @UseGuards(JwtAuthGuard, RolesGuard, PlanPermissionsGuard)
-@ApiTags('Products')
+@ApiTags('Services')
 @ApiBearerAuth('access-token')
 @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT token.' })
-export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+export class ServicesController {
+  constructor(private readonly servicesService: ServicesService) {}
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
-  @Permissions(ModulePermission.PRODUCTS_MANAGE)
-  @ApiOperation({ summary: 'Create product' })
+  @Permissions(ModulePermission.SERVICES_MANAGE, ModulePermission.PRODUCTS_MANAGE)
+  @ApiOperation({ summary: 'Create service' })
   @ApiBody({ type: CreateProductDto })
-  @ApiOkResponse({ description: 'Product created successfully.' })
+  @ApiOkResponse({ description: 'Service created successfully.' })
   @ApiBadRequestResponse({ description: 'Validation error.' })
   @ApiForbiddenResponse({ description: 'Insufficient role or store permissions.' })
   create(
     @Body() createProductDto: CreateProductDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.productsService.create(createProductDto, user);
+    return this.servicesService.create(createProductDto, user);
   }
 
   @Get()
-  @Permissions(ModulePermission.PRODUCTS_MANAGE)
-  @ApiOperation({ summary: 'List products with pagination and filters' })
-  @ApiOkResponse({ description: 'Paginated products list.' })
+  @Permissions(ModulePermission.SERVICES_MANAGE, ModulePermission.PRODUCTS_MANAGE)
+  @ApiOperation({ summary: 'List services with pagination and filters' })
+  @ApiOkResponse({ description: 'Paginated services list.' })
   findAll(@CurrentUser() user: JwtPayload, @Query() query: ListProductsQueryDto) {
-    return this.productsService.findAll(user, query);
+    return this.servicesService.findAll(user, query);
   }
 
   @Get(':id')
-  @Permissions(ModulePermission.PRODUCTS_MANAGE)
-  @ApiOperation({ summary: 'Get product by id' })
+  @Permissions(ModulePermission.SERVICES_MANAGE, ModulePermission.PRODUCTS_MANAGE)
+  @ApiOperation({ summary: 'Get service by id' })
   @ApiParam({ name: 'id', format: 'uuid' })
-  @ApiOkResponse({ description: 'Product found.' })
-  @ApiNotFoundResponse({ description: 'Product not found.' })
+  @ApiOkResponse({ description: 'Service found.' })
+  @ApiNotFoundResponse({ description: 'Service not found.' })
   @ApiForbiddenResponse({ description: 'Cross-store access is not allowed.' })
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    return this.productsService.findOne(id, user);
+    return this.servicesService.findOne(id, user);
   }
 
   @Patch(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
-  @Permissions(ModulePermission.PRODUCTS_MANAGE)
-  @ApiOperation({ summary: 'Update product' })
+  @Permissions(ModulePermission.SERVICES_MANAGE, ModulePermission.PRODUCTS_MANAGE)
+  @ApiOperation({ summary: 'Update service' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiBody({ type: UpdateProductDto })
-  @ApiOkResponse({ description: 'Product updated successfully.' })
-  @ApiNotFoundResponse({ description: 'Product not found.' })
+  @ApiOkResponse({ description: 'Service updated successfully.' })
+  @ApiNotFoundResponse({ description: 'Service not found.' })
   @ApiBadRequestResponse({ description: 'Validation error.' })
   @ApiForbiddenResponse({ description: 'Insufficient role or store permissions.' })
   update(
@@ -93,22 +93,22 @@ export class ProductsController {
     @Body() updateProductDto: UpdateProductDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.productsService.update(id, updateProductDto, user);
+    return this.servicesService.update(id, updateProductDto, user);
   }
 
   @Delete(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
-  @Permissions(ModulePermission.PRODUCTS_MANAGE)
-  @ApiOperation({ summary: 'Delete product (admin only)' })
+  @Permissions(ModulePermission.SERVICES_MANAGE, ModulePermission.PRODUCTS_MANAGE)
+  @ApiOperation({ summary: 'Delete service (admin only)' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse({
-    description: 'Product deleted successfully.',
+    description: 'Service deleted successfully.',
     type: ApiMessageResponseDto,
   })
-  @ApiNotFoundResponse({ description: 'Product not found.' })
+  @ApiNotFoundResponse({ description: 'Service not found.' })
   @ApiForbiddenResponse({ description: 'Admin role required.' })
   async remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    await this.productsService.remove(id, user);
-    return { message: 'Product deleted successfully.' };
+    await this.servicesService.remove(id, user);
+    return { message: 'Service deleted successfully.' };
   }
 }

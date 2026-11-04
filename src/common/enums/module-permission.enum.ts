@@ -1,6 +1,8 @@
 export enum ModulePermission {
   STORES_MANAGE = 'stores.manage',
   USERS_MANAGE = 'users.manage',
+  EMPLOYEES_MANAGE = 'employees.manage',
+  SERVICES_MANAGE = 'services.manage',
   PRODUCTS_MANAGE = 'products.manage',
   ORDERS_MANAGE = 'orders.manage',
   INVOICES_MANAGE = 'invoices.manage',

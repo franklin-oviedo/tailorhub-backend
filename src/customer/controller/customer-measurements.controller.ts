@@ -3,16 +3,16 @@ import { ApiTags, ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger
 import { CustomerMeasurementsService } from '../service/customer-measurements.service';
 import { CreateCustomerMeasurementDto } from '../dto/create-customer-measurement.dto';
 import { UpdateCustomerMeasurementDto } from '../dto/update-customer-measurement.dto';
-import { PlanPermissionsGuard } from 'src/common/guards/plan-permissions.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { Role } from 'src/common/enums/role.enum';
-import { Roles } from 'src/common/decorators/roles.decorator';
-import { Permissions } from 'src/common/decorators/permissions.decorator';
-import { ModulePermission } from 'src/common/enums/module-permission.enum';
+import { PlanPermissionsGuard } from '../../common/guards/plan-permissions.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { Role } from '../../common/enums/role.enum';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { ModulePermission } from '../../common/enums/module-permission.enum';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiForbiddenResponse } from '@nestjs/swagger';
-import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('customer/customer-measurements')
 @UseGuards(JwtAuthGuard, RolesGuard, PlanPermissionsGuard)
@@ -43,8 +43,8 @@ export class CustomerMeasurementsController {
   @ApiOkResponse({ description: 'Customer measurement retrieved successfully.' })
   @ApiBadRequestResponse({ description: 'Validation or business rule error.' })
   @ApiForbiddenResponse({ description: 'Insufficient role or cross-store data usage.' })
-  findOne(@Param('id') id: string) {
-    return this.customerMeasurementsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.customerMeasurementsService.findOne(id, user);
   }
 
   @Patch(':id')
@@ -55,8 +55,8 @@ export class CustomerMeasurementsController {
   @ApiOkResponse({ description: 'Customer measurement updated successfully.' })
   @ApiBadRequestResponse({ description: 'Validation or business rule error.' })
   @ApiForbiddenResponse({ description: 'Insufficient role or cross-store data usage.' })
-  update(@Body() updateCustomerMeasurementDto: UpdateCustomerMeasurementDto, @CurrentUser() user: JwtPayload) {
-    return this.customerMeasurementsService.update(updateCustomerMeasurementDto, user);
+  update(@Param('id') id: string, @Body() updateCustomerMeasurementDto: UpdateCustomerMeasurementDto, @CurrentUser() user: JwtPayload) {
+    return this.customerMeasurementsService.update(id, updateCustomerMeasurementDto, user);
   }
 
   @Delete(':id')

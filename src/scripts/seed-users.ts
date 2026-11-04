@@ -154,8 +154,8 @@ async function seedPermissionsAndPlan(
       description: 'Allows managing users in the store.',
     },
     {
-      name: ModulePermission.PRODUCTS_MANAGE,
-      description: 'Allows managing products in the store.',
+      name: ModulePermission.SERVICES_MANAGE,
+      description: 'Allows managing services in the store.',
     },
     {
       name: ModulePermission.ORDERS_MANAGE,
@@ -191,7 +191,7 @@ async function seedPermissionsAndPlan(
 
   if (existingPlan) {
     existingPlan.description = 'Plan demo con modulos operativos habilitados.';
-    existingPlan.enabledModules = ['users', 'products', 'orders', 'appointments', 'reports'];
+    existingPlan.enabledModules = ['users', 'services', 'orders', 'appointments', 'reports'];
     existingPlan.permissions = permissions;
     const updated = await plansRepository.save(existingPlan);
     // eslint-disable-next-line no-console
@@ -203,7 +203,7 @@ async function seedPermissionsAndPlan(
     plansRepository.create({
       name: planName,
       description: 'Plan demo con modulos operativos habilitados.',
-      enabledModules: ['users', 'products', 'orders', 'appointments', 'reports'],
+      enabledModules: ['users', 'services', 'orders', 'appointments', 'reports'],
       permissions,
     }),
   );

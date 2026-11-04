@@ -1,4 +1,5 @@
 import {
+  Post,
   Controller,
   Delete,
   Get,
@@ -26,11 +27,14 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { PlanPermissionsGuard } from '../common/guards/plan-permissions.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { ApiMessageResponseDto } from '../common/dto/api-message-response.dto';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { ModulePermission } from '../common/enums/module-permission.enum';
+import { Roles } from '../common/decorators/roles.decorator';
+import { Role } from '../common/enums/role.enum';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard, PlanPermissionsGuard)
@@ -47,7 +51,20 @@ export class UsersController {
     return this.usersService.findMyProfile(user.sub);
   }
 
+  @Post()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
+  @Permissions(ModulePermission.USERS_MANAGE)
+  @ApiOperation({ summary: 'Create user' })
+  @ApiBody({ type: CreateUserDto })
+  @ApiOkResponse({ description: 'User created successfully.' })
+  @ApiBadRequestResponse({ description: 'Validation error, duplicate email, or invalid store.' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions.' })
+  create(@Body() createUserDto: CreateUserDto, @CurrentUser() user: JwtPayload) {
+    return this.usersService.create(createUserDto, user);
+  }
+
   @Get()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @Permissions(ModulePermission.USERS_MANAGE)
   @ApiOperation({ summary: 'List users with pagination and filters' })
   @ApiOkResponse({ description: 'Paginated users list.' })
@@ -56,6 +73,7 @@ export class UsersController {
   }
 
   @Get(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @Permissions(ModulePermission.USERS_MANAGE)
   @ApiOperation({ summary: 'Get user by id' })
   @ApiParam({ name: 'id', format: 'uuid' })
@@ -67,6 +85,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @Permissions(ModulePermission.USERS_MANAGE)
   @ApiOperation({ summary: 'Update user profile or admin-managed user' })
   @ApiParam({ name: 'id', format: 'uuid' })
@@ -83,7 +102,24 @@ export class UsersController {
     return this.usersService.update(id, updateUserDto, user);
   }
 
+  @Patch(':id/disable')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
+  @Permissions(ModulePermission.USERS_MANAGE)
+  @ApiOperation({ summary: 'Disable a user' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({
+    description: 'User disabled successfully.',
+    type: ApiMessageResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'User not found.' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions.' })
+  async disable(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    await this.usersService.disable(id, user);
+    return { message: 'User disabled successfully.' };
+  }
+
   @Delete(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @Permissions(ModulePermission.USERS_MANAGE)
   @ApiOperation({ summary: 'Delete a user' })
   @ApiParam({ name: 'id', format: 'uuid' })

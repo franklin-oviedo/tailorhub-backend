@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Role } from '../common/enums/role.enum';
-import { ProductsController } from './products.controller';
-import { ProductsService } from './products.service';
+import { ServicesController } from './products.controller';
+import { ServicesService } from './products.service';
 
-describe('ProductsController', () => {
-  let controller: ProductsController;
+describe('ServicesController', () => {
+  let controller: ServicesController;
   const productsService = {
     create: jest.fn(),
     findAll: jest.fn(),
@@ -17,11 +17,11 @@ describe('ProductsController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [ProductsController],
-      providers: [{ provide: ProductsService, useValue: productsService }],
+      controllers: [ServicesController],
+      providers: [{ provide: ServicesService, useValue: productsService }],
     }).compile();
 
-    controller = module.get<ProductsController>(ProductsController);
+    controller = module.get<ServicesController>(ServicesController);
   });
 
   it('delegates findAll', async () => {
@@ -38,6 +38,6 @@ describe('ProductsController', () => {
 
     const result = await controller.remove('p1', actor);
 
-    expect(result).toEqual({ message: 'Product deleted successfully.' });
+    expect(result).toEqual({ message: 'Service deleted successfully.' });
   });
 });

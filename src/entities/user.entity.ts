@@ -24,6 +24,9 @@ export class User {
   @Column({ name: 'role', type: 'enum', enum: Role, default: Role.CLIENT, comment: 'Role of the user' })
   role: Role;
 
+  @Column({ name: 'is_active', type: 'boolean', default: true, nullable: false, comment: 'Indicates if the user is active' })
+  isActive: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: 'Creation date of the user' })
   createdAt: Date;
 

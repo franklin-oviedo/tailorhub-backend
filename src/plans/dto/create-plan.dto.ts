@@ -14,7 +14,7 @@ export class CreatePlanDto {
 
   @ApiPropertyOptional({
     type: [String],
-    example: ['products', 'orders', 'appointments', 'reports'],
+    example: ['services', 'orders', 'appointments', 'reports'],
   })
   @IsOptional()
   @IsArray()

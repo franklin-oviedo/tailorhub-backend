@@ -4,10 +4,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../entities/product.entity';
 import { Role } from '../common/enums/role.enum';
-import { ProductsService } from './products.service';
+import { ServicesService } from './products.service';
 
-describe('ProductsService', () => {
-  let service: ProductsService;
+describe('ServicesService', () => {
+  let service: ServicesService;
   let repository: jest.Mocked<Repository<Product>>;
 
   const baseUser = {
@@ -20,7 +20,7 @@ describe('ProductsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ProductsService,
+        ServicesService,
         {
           provide: getRepositoryToken(Product),
           useValue: {
@@ -34,7 +34,7 @@ describe('ProductsService', () => {
       ],
     }).compile();
 
-    service = module.get<ProductsService>(ProductsService);
+    service = module.get<ServicesService>(ServicesService);
     repository = module.get(getRepositoryToken(Product));
   });
 
@@ -51,7 +51,7 @@ describe('ProductsService', () => {
     return qb;
   };
 
-  it('should create a product with actor storeId', async () => {
+  it('should create a service with actor storeId', async () => {
     const dto = { name: 'Saco', price: 99.99, isActive: true };
     const created = { id: 'p1', ...dto, storeId: 'store-1' } as Product;
 
@@ -60,7 +60,7 @@ describe('ProductsService', () => {
 
     const result = await service.create(dto, baseUser);
 
-    expect(repository.create).toHaveBeenCalledWith({ ...dto, storeId: 'store-1' });
+    expect(repository.create).toHaveBeenCalledWith({ ...dto, store: { id: 'store-1' } });
     expect(result).toEqual(created);
   });
 
@@ -71,14 +71,14 @@ describe('ProductsService', () => {
   });
 
   it('should throw ForbiddenException for cross-store access', async () => {
-    repository.findOne.mockResolvedValue({ id: 'p2', storeId: 'other-store' } as Product);
+    repository.findOne.mockResolvedValue({ id: 'p2', store: { id: 'other-store' } } as Product);
 
     await expect(service.findOne('p2', baseUser)).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('should allow admin to access cross-store product', async () => {
     const adminUser = { ...baseUser, role: Role.ADMIN };
-    const product = { id: 'p3', storeId: 'other-store' } as Product;
+    const product = { id: 'p3', store: { id: 'other-store' } } as Product;
     repository.findOne.mockResolvedValue(product);
 
     const result = await service.findOne('p3', adminUser);
@@ -86,7 +86,7 @@ describe('ProductsService', () => {
     expect(result).toEqual(product);
   });
 
-  it('should return paginated products with filters for non-admin', async () => {
+  it('should return paginated services with filters for non-admin', async () => {
     const qb = createQb();
 
     const result = await service.findAll(baseUser, {
@@ -103,7 +103,7 @@ describe('ProductsService', () => {
     expect(result.meta.totalItems).toBe(1);
   });
 
-  it('should return paginated products for admin without filters', async () => {
+  it('should return paginated services for admin without filters', async () => {
     const qb = createQb();
     const adminUser = { ...baseUser, role: Role.ADMIN };
 
@@ -114,7 +114,7 @@ describe('ProductsService', () => {
   });
 
   it('should allow non-admin to access product in same store', async () => {
-    const product = { id: 'p10', storeId: 'store-1' } as Product;
+    const product = { id: 'p10', store: { id: 'store-1' } } as Product;
     repository.findOne.mockResolvedValue(product);
 
     const result = await service.findOne('p10', baseUser);
@@ -134,7 +134,7 @@ describe('ProductsService', () => {
     expect(qb.andWhere).toHaveBeenCalledWith('product.isActive = :isActive', { isActive: false });
   });
 
-  it('should paginate non-admin products without optional filters', async () => {
+  it('should paginate non-admin services without optional filters', async () => {
     const qb = createQb();
 
     await service.findAll(baseUser, {} as any);
@@ -144,7 +144,7 @@ describe('ProductsService', () => {
   });
 
   it('should update and save product', async () => {
-    const product = { id: 'p1', storeId: 'store-1', name: 'Old' } as Product;
+    const product = { id: 'p1', store: { id: 'store-1' }, name: 'Old' } as Product;
     repository.findOne.mockResolvedValue(product);
     repository.save.mockResolvedValue({ ...product, name: 'New' } as Product);
 
@@ -155,7 +155,7 @@ describe('ProductsService', () => {
   });
 
   it('should remove product', async () => {
-    const product = { id: 'p1', storeId: 'store-1' } as Product;
+    const product = { id: 'p1', store: { id: 'store-1' } } as Product;
     repository.findOne.mockResolvedValue(product);
     repository.remove.mockResolvedValue(product);
 

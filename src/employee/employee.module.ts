@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { EmployeeService } from './employee.service';
 import { EmployeeController } from './employee.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Customers } from 'src/entities/customer.entity';
-import { Employee } from 'src/entities/employee.entity';
+import { Employee } from '../entities/employee.entity';
+import { PlanPermissionsGuard } from '../common/guards/plan-permissions.guard';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ Employee ])],
+  imports: [TypeOrmModule.forFeature([Employee])],
   controllers: [EmployeeController],
-  providers: [EmployeeService],
+  providers: [EmployeeService, PlanPermissionsGuard],
 })
 export class EmployeeModule {}

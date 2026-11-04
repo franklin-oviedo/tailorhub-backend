@@ -6,10 +6,12 @@ import { UsersService } from './users.service';
 describe('UsersController', () => {
   let controller: UsersController;
   const usersService = {
+    create: jest.fn(),
     findMyProfile: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
     update: jest.fn(),
+    disable: jest.fn(),
     remove: jest.fn(),
   };
 
@@ -41,11 +43,35 @@ describe('UsersController', () => {
     expect(usersService.findAll).toHaveBeenCalledWith(actor, query);
   });
 
+  it('delegates create', async () => {
+    const dto = {
+      fullName: 'New User',
+      email: 'new@tailorhub.com',
+      phone: '+57 300 000 0000',
+      password: 'An0therPass!',
+      role: Role.EMPLOYEE,
+    };
+    usersService.create.mockResolvedValue({ id: 'u2' });
+
+    await controller.create(dto, actor);
+
+    expect(usersService.create).toHaveBeenCalledWith(dto, actor);
+  });
+
   it('returns success message on remove', async () => {
     usersService.remove.mockResolvedValue(undefined);
 
     const result = await controller.remove('u1', actor);
 
     expect(result).toEqual({ message: 'User deleted successfully.' });
+  });
+
+  it('returns success message on disable', async () => {
+    usersService.disable.mockResolvedValue(undefined);
+
+    const result = await controller.disable('u1', actor);
+
+    expect(usersService.disable).toHaveBeenCalledWith('u1', actor);
+    expect(result).toEqual({ message: 'User disabled successfully.' });
   });
 });

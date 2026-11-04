@@ -6,7 +6,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { StoresModule } from './stores/stores.module';
-import { ProductsModule } from './products/products.module';
+import { ServicesModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { Store } from './entities/store.entity';
@@ -107,7 +107,7 @@ import { DebitNote } from './entities/debit-note.entity';
     AuthModule,
     UsersModule,
     StoresModule,
-    ProductsModule,
+    ServicesModule,
     OrdersModule,
     AppointmentsModule,
     PlansModule,
