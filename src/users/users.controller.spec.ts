@@ -34,6 +34,15 @@ describe('UsersController', () => {
     expect(usersService.findMyProfile).toHaveBeenCalledWith('u1');
   });
 
+  it('delegates updateMe', async () => {
+    const dto = { fullName: 'Nuevo Nombre' };
+    usersService.update.mockResolvedValue({ id: 'u1' });
+
+    await controller.updateMe(dto, actor);
+
+    expect(usersService.update).toHaveBeenCalledWith('u1', dto, actor);
+  });
+
   it('delegates findAll', async () => {
     const query = { page: 1, limit: 10 };
     usersService.findAll.mockResolvedValue({ data: [], meta: {} });

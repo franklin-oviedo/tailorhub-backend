@@ -894,6 +894,8 @@ export class InvoiceService {
         email: invoice.store.email,
         phone: invoice.store.phone,
         address: invoice.store.address,
+        logoUrl: invoice.store.logo,
+        sealUrl: invoice.store.seal
       },
       currency: invoice.currency,
       subtotal: this.normalizeAmount(invoice.subtotal),

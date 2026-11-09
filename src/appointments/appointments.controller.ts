@@ -60,6 +60,7 @@ export class AppointmentsController {
   }
 
   @Get()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.CLIENT)
   @Permissions(ModulePermission.APPOINTMENTS_MANAGE)
   @ApiOperation({ summary: 'List appointments with pagination and filters' })
   @ApiOkResponse({ description: 'Paginated appointments list.' })
@@ -71,6 +72,7 @@ export class AppointmentsController {
   }
 
   @Get(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.CLIENT)
   @Permissions(ModulePermission.APPOINTMENTS_MANAGE)
   @ApiOperation({ summary: 'Get appointment by id' })
   @ApiParam({ name: 'id', format: 'uuid' })
@@ -113,5 +115,18 @@ export class AppointmentsController {
   async remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     await this.appointmentsService.remove(id, user);
     return { message: 'Appointment deleted successfully.' };
+  }
+
+  @Patch(':id/cancel')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.CLIENT)
+  @Permissions(ModulePermission.APPOINTMENTS_MANAGE)
+  @ApiOperation({ summary: 'Cancel appointment' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse({ description: 'Appointment cancelled successfully.' })
+  @ApiNotFoundResponse({ description: 'Appointment not found.' })
+  @ApiBadRequestResponse({ description: 'Only scheduled or confirmed appointments can be cancelled.' })
+  @ApiForbiddenResponse({ description: 'Insufficient role or cross-store access.' })
+  cancel(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.appointmentsService.cancel(id, user);
   }
 }

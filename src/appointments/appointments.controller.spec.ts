@@ -11,6 +11,7 @@ describe('AppointmentsController', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    cancel: jest.fn(),
   };
 
   const actor = { sub: 'u1', email: 'u@test.com', role: Role.EMPLOYEE, storeId: 's1' };
@@ -39,5 +40,13 @@ describe('AppointmentsController', () => {
     const result = await controller.remove('a1', actor);
 
     expect(result).toEqual({ message: 'Appointment deleted successfully.' });
+  });
+
+  it('delegates cancel', async () => {
+    appointmentsService.cancel.mockResolvedValue({ id: 'a1', status: 'cancelled' });
+
+    await controller.cancel('a1', actor);
+
+    expect(appointmentsService.cancel).toHaveBeenCalledWith('a1', actor);
   });
 });

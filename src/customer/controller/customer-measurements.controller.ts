@@ -37,7 +37,7 @@ export class CustomerMeasurementsController {
   }
 
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.CLIENT)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
   @Permissions(ModulePermission.CUSTOMER_MEASUREMENTS_VIEW, ModulePermission.CUSTOMER_MEASUREMENTS_MANAGE)
   @ApiOperation({ summary: 'Get customer measurement by ID' })
   @ApiOkResponse({ description: 'Customer measurement retrieved successfully.' })
@@ -60,6 +60,12 @@ export class CustomerMeasurementsController {
   }
 
   @Delete(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Permissions(ModulePermission.CUSTOMER_MEASUREMENTS_MANAGE)
+  @ApiOperation({ summary: 'Delete customer measurement' })
+  @ApiOkResponse({ description: 'Customer measurement deleted successfully.' })
+  @ApiBadRequestResponse({ description: 'Validation or business rule error.' })
+  @ApiForbiddenResponse({ description: 'Insufficient role or cross-store data usage.' })
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.customerMeasurementsService.remove(id, user);
   }

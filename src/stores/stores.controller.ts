@@ -7,9 +7,12 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
+  ApiConsumes,
   ApiBody,
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -21,6 +24,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { StoresService } from './stores.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
@@ -78,6 +82,56 @@ export class StoresController {
   @ApiBadRequestResponse({ description: 'Validation error or duplicated email.' })
   update(@Param('id') id: string, @Body() updateStoreDto: UpdateStoreDto) {
     return this.storesService.update(id, updateStoreDto);
+  }
+
+  @Patch(':id/logo')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload store logo to Supabase (admin only)' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiOkResponse({ description: 'Store logo uploaded successfully.' })
+  @ApiNotFoundResponse({ description: 'Store not found.' })
+  @ApiBadRequestResponse({ description: 'Missing image, invalid file, or storage configuration error.' })
+  uploadLogo(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+    return this.storesService.uploadLogo(id, file);
+  }
+
+  @Patch(':id/seal')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload store seal to Supabase (admin only)' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiOkResponse({ description: 'Store seal uploaded successfully.' })
+  @ApiNotFoundResponse({ description: 'Store not found.' })
+  @ApiBadRequestResponse({ description: 'Missing image, invalid file, or storage configuration error.' })
+  uploadSeal(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+    return this.storesService.uploadSeal(id, file);
   }
 
   @Delete(':id')

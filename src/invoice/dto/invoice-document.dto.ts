@@ -16,6 +16,12 @@ export class InvoiceDocumentCompanyDto {
 
   @ApiProperty()
   address: string;
+  
+  @ApiProperty({ nullable: true })
+  logoUrl: string | null;
+
+  @ApiProperty({ nullable: true })
+  sealUrl: string | null;
 }
 
 export class InvoiceDocumentItemDto {

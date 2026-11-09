@@ -9,6 +9,8 @@ describe('StoresController', () => {
     findAll: jest.fn(),
     findOne: jest.fn(),
     update: jest.fn(),
+    uploadLogo: jest.fn(),
+    uploadSeal: jest.fn(),
     remove: jest.fn(),
   };
 
@@ -36,5 +38,14 @@ describe('StoresController', () => {
     const result = await controller.remove('s1');
 
     expect(result).toEqual({ message: 'Store deleted successfully.' });
+  });
+
+  it('delegates uploadSeal', async () => {
+    const file = { mimetype: 'image/png', buffer: Buffer.from('seal') } as Express.Multer.File;
+    storesService.uploadSeal.mockResolvedValue({ id: 's1', seal: 'https://example.com/seal.png' });
+
+    await controller.uploadSeal('s1', file);
+
+    expect(storesService.uploadSeal).toHaveBeenCalledWith('s1', file);
   });
 });

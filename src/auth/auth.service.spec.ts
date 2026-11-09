@@ -1,15 +1,18 @@
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
+import { AuthProvider } from '../common/enums/auth-provider.enum';
 import { Role } from '../common/enums/role.enum';
 import { Store } from '../entities/store.entity';
 import { User } from '../entities/user.entity';
 import { Customers } from '../entities/customer.entity';
 import { Employee } from '../entities/employee.entity';
 import { AuthService } from './auth.service';
+import { GoogleCalendarService } from './google-calendar.service';
 
 jest.mock('bcrypt', () => ({
   hash: jest.fn(),
@@ -23,6 +26,8 @@ describe('AuthService', () => {
   let customersRepository: jest.Mocked<Repository<Customers>>;
   let employeeRepository: jest.Mocked<Repository<Employee>>;
   let jwtService: jest.Mocked<JwtService>;
+  let configService: ConfigService;
+  let googleCalendarService: jest.Mocked<GoogleCalendarService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -62,6 +67,28 @@ describe('AuthService', () => {
             signAsync: jest.fn(),
           },
         },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string, defaultValue?: string) => {
+              if (key === 'GOOGLE_CLIENT_ID') {
+                return 'google-client-id';
+              }
+
+              if (key === 'DEFAULT_STORE_ID') {
+                return defaultValue ?? undefined;
+              }
+
+              return defaultValue;
+            }),
+          },
+        },
+        {
+          provide: GoogleCalendarService,
+          useValue: {
+            linkCalendarToUser: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -71,9 +98,24 @@ describe('AuthService', () => {
     customersRepository = module.get(getRepositoryToken(Customers));
     employeeRepository = module.get(getRepositoryToken(Employee));
     jwtService = module.get(JwtService);
+    configService = module.get(ConfigService);
+    googleCalendarService = module.get(GoogleCalendarService);
+    jest.spyOn(global, 'fetch' as never).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        aud: 'google-client-id',
+        sub: 'google-user-id',
+        email: 'google@test.com',
+        email_verified: true,
+        given_name: 'Google',
+        family_name: 'User',
+        picture: 'https://example.com/avatar.png',
+      }),
+    } as Response);
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     jest.clearAllMocks();
   });
 
@@ -222,5 +264,65 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(usersRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('logs in with a valid Google token and creates the user when missing', async () => {
+    const store = { id: 'store-1' } as Store;
+
+    usersRepository.findOne.mockResolvedValue(null);
+    storesRepository.findOne.mockResolvedValue(store);
+    (bcrypt.hash as jest.Mock).mockResolvedValue('placeholder-password');
+    customersRepository.create.mockImplementation((payload) => payload as Customers);
+    customersRepository.save.mockImplementation(async (customer) => ({
+      ...customer,
+      id: 'customer-1',
+    }) as Customers);
+    usersRepository.create.mockImplementation((payload) => payload as User);
+    usersRepository.save.mockImplementation(async (user) => ({
+      ...user,
+      id: 'user-1',
+      customer: { ...user.customer, id: 'customer-1' },
+    }) as User);
+    jwtService.signAsync.mockResolvedValue('jwt-token');
+
+    const result = await service.loginWithGoogle({
+      credential: 'google-id-token',
+      storeId: 'store-1',
+      phone: '(809) 123-4567',
+    });
+
+    expect(result).toEqual({ accessToken: 'jwt-token' });
+    expect(usersRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        googleId: 'google-user-id',
+        authProvider: AuthProvider.GOOGLE,
+        role: Role.CLIENT,
+        store: expect.objectContaining({ id: 'store-1' }),
+      }),
+    );
+  });
+
+  it('links google calendar to authenticated user', async () => {
+    usersRepository.findOne.mockResolvedValue({
+      id: 'u1',
+      isActive: true,
+      customer: { email: 'google@test.com' },
+    } as unknown as User);
+    googleCalendarService.linkCalendarToUser.mockResolvedValue({
+      calendarEmail: 'google@test.com',
+    });
+
+    const result = await service.linkGoogleCalendar(
+      { sub: 'u1', email: 'google@test.com', role: Role.CLIENT, storeId: 'store-1' },
+      { authorizationCode: 'code-123' },
+    );
+
+    expect(result).toEqual({ linked: true, calendarEmail: 'google@test.com' });
+    expect(googleCalendarService.linkCalendarToUser).toHaveBeenCalledWith(
+      'u1',
+      'code-123',
+      'google@test.com',
+      undefined,
+    );
   });
 });

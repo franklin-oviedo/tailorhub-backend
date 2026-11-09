@@ -45,10 +45,22 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.CLIENT)
   @ApiOperation({ summary: 'Get authenticated user profile' })
   @ApiOkResponse({ description: 'Authenticated user profile.' })
   getMe(@CurrentUser() user: JwtPayload) {
     return this.usersService.findMyProfile(user.sub);
+  }
+
+  @Patch('me')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.CLIENT)
+  @ApiOperation({ summary: 'Update authenticated user profile' })
+  @ApiBody({ type: UpdateUserDto })
+  @ApiOkResponse({ description: 'Authenticated user updated successfully.' })
+  @ApiBadRequestResponse({ description: 'Validation error or duplicated email.' })
+  @ApiForbiddenResponse({ description: 'Insufficient permissions.' })
+  updateMe(@Body() updateUserDto: UpdateUserDto, @CurrentUser() user: JwtPayload) {
+    return this.usersService.update(user.sub, updateUserDto, user);
   }
 
   @Post()

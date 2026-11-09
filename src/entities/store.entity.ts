@@ -33,6 +33,24 @@ export class Store {
   @Column({ name: 'address', type: 'varchar', nullable: false, length: 255, comment: 'Address of the store' })
   address: string;
 
+  @Column({
+    name: 'logo',
+    type: 'varchar',
+    length: 1024,
+    nullable: true,
+    comment: 'URL or file path for the company logo',
+  })
+  logo: string | null;
+
+  @Column({
+    name: 'seal',
+    type: 'varchar',
+    length: 1024,
+    nullable: true,
+    comment: 'URL or file path for the company seal used on invoices',
+  })
+  seal: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: 'Creation date of the store' })
   createdAt: Date;
 

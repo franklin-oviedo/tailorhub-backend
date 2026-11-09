@@ -1,10 +1,15 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsOptional } from 'class-validator';
+import { IsDate, IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { AppointmentStatusEnum } from '../../enums/appointments.enum';
 
 export class ListAppointmentsQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ format: 'uuid', description: 'Filter by customer id.' })
+  @IsOptional()
+  @IsUUID()
+  customerId?: string;
+
   @ApiPropertyOptional({ enum: AppointmentStatusEnum })
   @IsOptional()
   @IsEnum(AppointmentStatusEnum)

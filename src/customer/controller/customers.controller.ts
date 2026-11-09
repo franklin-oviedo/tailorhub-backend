@@ -17,6 +17,8 @@ import { CreateCustomerDto } from '../dto/create-customer.dto';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Role } from '../../common/enums/role.enum';
 
 @Controller('customers')
 @UseGuards(JwtAuthGuard, RolesGuard, PlanPermissionsGuard)
@@ -27,6 +29,7 @@ export class CustomersController {
     constructor(private readonly customersService: CustomersService) {}
 
     @Post()
+    @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
     @ApiOperation({ summary: 'Create customer' })
     @ApiBody({ type: CreateCustomerDto })
     @ApiOkResponse({ description: 'Customer created successfully.' })
@@ -39,6 +42,7 @@ export class CustomersController {
     }
 
     @Get()
+    @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
     @ApiOperation({ summary: 'List customers' })
     @ApiOkResponse({ description: 'Customers retrieved successfully.' })
     getAllCustomer(@CurrentUser() user: JwtPayload){
@@ -46,6 +50,7 @@ export class CustomersController {
     }
 
     @Get(':id')
+    @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
     @ApiOperation({ summary: 'Get customer by id' })
     @ApiParam({ name: 'id', format: 'uuid' })
     @ApiOkResponse({ description: 'Customer retrieved successfully.' })
@@ -55,6 +60,7 @@ export class CustomersController {
     }
 
     @Patch(':id')
+    @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
     @ApiOperation({ summary: 'Update customer' })
     @ApiParam({ name: 'id', format: 'uuid' })
     @ApiBody({ type: UpdateCustomerDto })

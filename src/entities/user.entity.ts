@@ -6,12 +6,13 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   OneToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Store } from './store.entity';
 import { Role } from '../common/enums/role.enum';
+import { AuthProvider } from '../common/enums/auth-provider.enum';
 import { Customers } from './customer.entity';
 import { Employee } from './employee.entity';
-import { JoinColumn } from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -23,6 +24,52 @@ export class User {
 
   @Column({ name: 'role', type: 'enum', enum: Role, default: Role.CLIENT, comment: 'Role of the user' })
   role: Role;
+
+  @Column({
+    name: 'auth_provider',
+    type: 'enum',
+    enum: AuthProvider,
+    default: AuthProvider.LOCAL,
+    nullable: false,
+    comment: 'Authentication provider used for the user account',
+  })
+  authProvider: AuthProvider;
+
+  @Column({
+    name: 'google_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    unique: true,
+    comment: 'Google account identifier when the user signs in with Google',
+  })
+  googleId: string | null;
+
+  @Column({
+    name: 'avatar_url',
+    type: 'varchar',
+    length: 1024,
+    nullable: true,
+    comment: 'Profile avatar URL from an external identity provider',
+  })
+  avatarUrl: string | null;
+
+  @Column({
+    name: 'google_refresh_token',
+    type: 'text',
+    nullable: true,
+    comment: 'Google OAuth refresh token used to access Google Calendar on behalf of the user',
+  })
+  googleRefreshToken: string | null;
+
+  @Column({
+    name: 'google_calendar_email',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    comment: 'Google account email linked for calendar synchronization',
+  })
+  googleCalendarEmail: string | null;
 
   @Column({ name: 'is_active', type: 'boolean', default: true, nullable: false, comment: 'Indicates if the user is active' })
   isActive: boolean;

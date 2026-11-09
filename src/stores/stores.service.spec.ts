@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,6 +22,12 @@ describe('StoresService', () => {
             save: jest.fn(),
             remove: jest.fn(),
             createQueryBuilder: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn(),
           },
         },
       ],
@@ -52,7 +59,8 @@ describe('StoresService', () => {
 
     const result = await service.create(dto);
 
-    expect(result).toEqual(created);
+    expect(result).toEqual(expect.objectContaining(created));
+    expect(result.logo).toBeNull();
   });
 
   it('throws BadRequestException when creating duplicated store', async () => {
@@ -99,12 +107,12 @@ describe('StoresService', () => {
   });
 
   it('finds a store successfully', async () => {
-    const current = { id: 's1', email: 'same@test.com' } as Store;
+    const current = { id: 's1', email: 'same@test.com', logo: null, seal: null } as Store;
     storesRepository.findOne.mockResolvedValue(current);
 
     const result = await service.findOne('s1');
 
-    expect(result).toBe(current);
+    expect(result).toEqual(expect.objectContaining(current));
   });
 
   it('updates store successfully when changing email and no duplicate exists', async () => {
@@ -124,8 +132,19 @@ describe('StoresService', () => {
 
     const result = await service.update('s1', { name: 'Updated' });
 
-    expect(result).toBe(current);
+    expect(result).toEqual(expect.objectContaining({ id: 's1' }));
+    expect(result.logo).toBeNull();
+    expect(result.seal).toBeNull();
     expect(storesRepository.save).toHaveBeenCalled();
+  });
+
+  it('normalizes logo to null when missing in store response', async () => {
+    storesRepository.findOne.mockResolvedValue({ id: 's2', name: 'Store without logo' } as Store);
+
+    const result = await service.findOne('s2');
+
+    expect(result.logo).toBeNull();
+    expect(result.seal).toBeNull();
   });
 
   it('removes store', async () => {
@@ -135,7 +154,9 @@ describe('StoresService', () => {
 
     await service.remove('s1');
 
-    expect(storesRepository.remove).toHaveBeenCalledWith(current);
+    expect(storesRepository.remove).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 's1', email: 'same@test.com', logo: null, seal: null }),
+    );
   });
 
   it('throws NotFoundException when removing missing store', async () => {

@@ -16,6 +16,7 @@ describe('OrdersService', () => {
   let ordersRepository: jest.Mocked<Repository<Order>>;
   let orderItemsRepository: jest.Mocked<Repository<OrderItem>>;
   let productsRepository: jest.Mocked<Repository<Product>>;
+  let usersRepository: jest.Mocked<Repository<User>>;
   let customersRepository: jest.Mocked<Repository<Customers>>;
 
   const actor = {
@@ -70,6 +71,7 @@ describe('OrdersService', () => {
     ordersRepository = module.get(getRepositoryToken(Order));
     orderItemsRepository = module.get(getRepositoryToken(OrderItem));
     productsRepository = module.get(getRepositoryToken(Product));
+    usersRepository = module.get(getRepositoryToken(User));
     customersRepository = module.get(getRepositoryToken(Customers));
   });
 
@@ -164,5 +166,26 @@ describe('OrdersService', () => {
     const result = await service.updateStatus('o1', { status: OrderStatusEnum.COMPLETED }, actor);
 
     expect(result.status).toBe(OrderStatusEnum.COMPLETED);
+  });
+
+  it('throws when client tries creating order for another customer profile', async () => {
+    const clientActor = {
+      sub: 'u-client',
+      email: 'client@test.com',
+      role: Role.CLIENT,
+      storeId: 'store-1',
+    };
+
+    usersRepository.findOne.mockResolvedValue({ id: 'u-client', customer: { id: 'c-client' } } as User);
+
+    await expect(
+      service.create(
+        {
+          customerId: 'c-other',
+          items: [{ productId: 'p1', quantity: 1 }],
+        },
+        clientActor,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

@@ -126,9 +126,16 @@ export class SuperAdminProtectionService implements OnApplicationBootstrap {
     const defaultStoreEmail = process.env.SUPER_ADMIN_STORE_EMAIL ?? 'hq@tailorhub.local';
     const defaultStorePhone = process.env.SUPER_ADMIN_STORE_PHONE ?? '+1 000 000 0001';
     const defaultStoreAddress = process.env.SUPER_ADMIN_STORE_ADDRESS ?? 'Main office';
+    const defaultPlanName = process.env.DEFAULT_PLAN_NAME ?? 'TailorHub Professional';
 
     let store = await this.storesRepository.findOne({
       where: [{ email: defaultStoreEmail }, { name: defaultStoreName }],
+      relations: ['plan'],
+    });
+
+    const defaultPlan = await this.plansRepository.findOne({
+      where: { name: defaultPlanName },
+      relations: ['permissions'],
     });
 
     if (!store) {
@@ -137,7 +144,11 @@ export class SuperAdminProtectionService implements OnApplicationBootstrap {
         email: defaultStoreEmail,
         phone: defaultStorePhone,
         address: defaultStoreAddress,
+        plan: defaultPlan ?? null,
       });
+      store = await this.storesRepository.save(store);
+    } else if (defaultPlan && (!store.plan || store.plan.id !== defaultPlan.id)) {
+      store.plan = defaultPlan;
       store = await this.storesRepository.save(store);
     }
 
@@ -222,7 +233,11 @@ export class SuperAdminProtectionService implements OnApplicationBootstrap {
       return;
     }
 
-    await this.dataSource.query(`
+    const hasPlanPermissionsTable = await this.dataSource.query(
+      `SELECT to_regclass('public.plan_permissions') AS table_name;`,
+    );
+
+    const triggerStatements = `
       CREATE OR REPLACE FUNCTION prevent_super_admin_delete()
       RETURNS trigger AS $$
       BEGIN
@@ -263,12 +278,18 @@ export class SuperAdminProtectionService implements OnApplicationBootstrap {
       BEFORE TRUNCATE ON permissions
       FOR EACH STATEMENT
       EXECUTE FUNCTION prevent_critical_table_truncate();
+    `;
 
-      DROP TRIGGER IF EXISTS trg_prevent_plan_permissions_truncate ON plan_permissions;
-      CREATE TRIGGER trg_prevent_plan_permissions_truncate
-      BEFORE TRUNCATE ON plan_permissions
-      FOR EACH STATEMENT
-      EXECUTE FUNCTION prevent_critical_table_truncate();
-    `);
+    await this.dataSource.query(triggerStatements);
+
+    if (hasPlanPermissionsTable[0]?.table_name) {
+      await this.dataSource.query(`
+        DROP TRIGGER IF EXISTS trg_prevent_plan_permissions_truncate ON plan_permissions;
+        CREATE TRIGGER trg_prevent_plan_permissions_truncate
+        BEFORE TRUNCATE ON plan_permissions
+        FOR EACH STATEMENT
+        EXECUTE FUNCTION prevent_critical_table_truncate();
+      `);
+    }
   }
 }

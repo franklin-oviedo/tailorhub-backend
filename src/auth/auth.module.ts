@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { GoogleCalendarService } from './google-calendar.service';
 import { User } from '../entities/user.entity';
 import { Store } from '../entities/store.entity';
 import { Customers } from 'src/entities/customer.entity';
@@ -45,7 +46,7 @@ import { Employee } from 'src/entities/employee.entity';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  providers: [AuthService, JwtStrategy, GoogleCalendarService],
+  exports: [AuthService, GoogleCalendarService],
 })
 export class AuthModule {}

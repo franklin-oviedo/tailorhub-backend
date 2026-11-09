@@ -38,7 +38,28 @@ export class OrdersService {
   ) {}
   /* c8 ignore stop */
 
+  private async resolveActorCustomerId(actor: JwtPayload): Promise<string> {
+    const actorUser = await this.usersRepository.findOne({
+      where: { id: actor.sub },
+      relations: { customer: true },
+    });
+
+    const customerId = actorUser?.customer?.id;
+    if (!customerId) {
+      throw new ForbiddenException('Client account is not linked to a customer profile.');
+    }
+
+    return customerId;
+  }
+
   async create(createOrderDto: CreateOrderDto, actor: JwtPayload): Promise<Order> {
+    if (actor.role === Role.CLIENT) {
+      const actorCustomerId = await this.resolveActorCustomerId(actor);
+      if (createOrderDto.customerId !== actorCustomerId) {
+        throw new ForbiddenException('Clients can only create orders for their own customer profile.');
+      }
+    }
+
     const customer = await this.customersRepository.findOne({
       where: { id: createOrderDto.customerId },
       relations: { store: true },
@@ -111,6 +132,11 @@ export class OrdersService {
       qb.andWhere('order.storeId = :storeId', { storeId: actor.storeId });
     }
 
+    if (actor.role === Role.CLIENT) {
+      const actorCustomerId = await this.resolveActorCustomerId(actor);
+      qb.andWhere('customer.id = :customerId', { customerId: actorCustomerId });
+    }
+
     if (query.status) {
       qb.andWhere('order.status = :status', { status: query.status });
     }
@@ -145,6 +171,13 @@ export class OrdersService {
 
     if (!isSuperAdmin(actor.role) && order.store.id !== actor.storeId) {
       throw new ForbiddenException('You cannot access orders from another store.');
+    }
+
+    if (actor.role === Role.CLIENT) {
+      const actorCustomerId = await this.resolveActorCustomerId(actor);
+      if (order.customer?.id !== actorCustomerId) {
+        throw new ForbiddenException('Clients can only access their own orders.');
+      }
     }
 
     return order;

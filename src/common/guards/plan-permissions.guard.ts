@@ -7,7 +7,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { ModulePermission } from '../enums/module-permission.enum';
@@ -20,6 +20,7 @@ export class PlanPermissionsGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     @Optional()
+    @InjectDataSource()
     private readonly dataSource?: DataSource,
     @Optional()
     @InjectRepository(User)

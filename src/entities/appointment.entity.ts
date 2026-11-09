@@ -24,6 +24,23 @@ export class Appointment {
   @Column({ name: 'notes', type: 'text', nullable: true, comment: 'Additional notes for the appointment' })
   notes: string | null;
 
+  @Column({
+    name: 'google_calendar_event_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    comment: 'Google Calendar event identifier for synchronized appointments',
+  })
+  googleCalendarEventId: string | null;
+
+  @Column({
+    name: 'google_calendar_owner_user_id',
+    type: 'uuid',
+    nullable: true,
+    comment: 'User id whose Google Calendar account owns the synchronized event',
+  })
+  googleCalendarOwnerUserId: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp', comment: 'Creation date of the appointment' })
   createdAt: Date;
 

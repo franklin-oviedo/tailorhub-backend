@@ -45,7 +45,7 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.CLIENT)
   @Permissions(ModulePermission.ORDERS_MANAGE)
   @ApiOperation({ summary: 'Create order' })
   @ApiBody({ type: CreateOrderDto })
@@ -60,6 +60,7 @@ export class OrdersController {
   }
 
   @Get()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.CLIENT)
   @Permissions(ModulePermission.ORDERS_MANAGE)
   @ApiOperation({ summary: 'List orders with pagination and filters' })
   @ApiOkResponse({ description: 'Paginated orders list.' })
@@ -68,6 +69,7 @@ export class OrdersController {
   }
 
   @Get(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EMPLOYEE, Role.CLIENT)
   @Permissions(ModulePermission.ORDERS_MANAGE)
   @ApiOperation({ summary: 'Get order by id' })
   @ApiParam({ name: 'id', format: 'uuid' })

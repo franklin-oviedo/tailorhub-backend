@@ -26,6 +26,26 @@ export class UpdateStoreDto {
   @MaxLength(255)
   address?: string;
 
+  @ApiPropertyOptional({
+    maxLength: 1024,
+    example: 'https://cdn.example.com/logos/atelier-central.png',
+    description: 'URL or relative path to the company logo image.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  logo?: string;
+
+  @ApiPropertyOptional({
+    maxLength: 1024,
+    example: 'https://cdn.example.com/seals/atelier-central-seal.png',
+    description: 'URL or relative path to the company seal image used on invoices.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  seal?: string;
+
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID()

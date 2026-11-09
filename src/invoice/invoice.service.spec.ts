@@ -749,6 +749,7 @@ describe('InvoiceService', () => {
         email: 'store@test.com',
         phone: '8090000000',
         address: 'Santo Domingo',
+        seal: 'https://cdn.example.com/tailorhub-seals/main-store-seal.png',
       },
       currency: 'DOP',
       subtotal: '100.00',
@@ -816,6 +817,7 @@ describe('InvoiceService', () => {
     expect(result.balance).toBe(105);
     expect(result.items[0].unitPrice).toBe(100);
     expect(result.payments[0].amount).toBe(10);
+    expect(result.company.sealUrl).toBe('https://cdn.example.com/tailorhub-seals/main-store-seal.png');
   });
 
   it('TEST 13 - should reconcile stale partially_paid to paid when payments fully settle invoice', async () => {

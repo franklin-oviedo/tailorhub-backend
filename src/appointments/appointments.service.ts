@@ -15,7 +15,8 @@ import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Role } from '../common/enums/role.enum';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
-import { Customers } from 'src/entities/customer.entity';
+import { Customers } from '../entities/customer.entity';
+import { GoogleCalendarService } from '../auth/google-calendar.service';
 
 const isSuperAdmin = (role: Role): boolean => role === Role.SUPER_ADMIN || role === Role.ADMIN;
 
@@ -27,8 +28,25 @@ export class AppointmentsService {
     private readonly appointmentsRepository: Repository<Appointment>,
     @InjectRepository(Customers)
     private readonly customersRepository: Repository<Customers>,
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
+    private readonly googleCalendarService: GoogleCalendarService,
   ) {}
   /* c8 ignore stop */
+
+  private async resolveActorCustomerId(actor: JwtPayload): Promise<string> {
+    const actorUser = await this.usersRepository.findOne({
+      where: { id: actor.sub },
+      relations: { customer: true },
+    });
+
+    const customerId = actorUser?.customer?.id;
+    if (!customerId) {
+      throw new ForbiddenException('Client account is not linked to a customer profile.');
+    }
+
+    return customerId;
+  }
 
   async create(
     createAppointmentDto: CreateAppointmentDto,
@@ -38,14 +56,11 @@ export class AppointmentsService {
       throw new BadRequestException('The appointment time must be in the future.');
     }
 
-    console.log('Actor:', actor);
-    console.log('Create Appointment DTO:', createAppointmentDto);
     const customer = await this.customersRepository.findOne({
       where: { id: createAppointmentDto.customerId },
       relations: { store: true },
     });
 
-    console.log('Customer:', customer);
     if (!customer) {
       throw new BadRequestException('Client not found.');
     }
@@ -54,15 +69,53 @@ export class AppointmentsService {
       throw new ForbiddenException('Users must belong to your store.');
     }
 
+    if (actor.role === Role.CLIENT) {
+      const actorCustomerId = await this.resolveActorCustomerId(actor);
+      if (customer.id !== actorCustomerId) {
+        throw new ForbiddenException('Clients can only create their own appointments.');
+      }
+    }
+
     const appointment = this.appointmentsRepository.create({
       scheduledAt: createAppointmentDto.scheduledAt,
       status: createAppointmentDto.status ?? AppointmentStatusEnum.SCHEDULED,
       notes: createAppointmentDto.notes ?? null,
+      googleCalendarEventId: null,
+      googleCalendarOwnerUserId: null,
       customer,
       store: customer.store,
     });
 
-    return this.appointmentsRepository.save(appointment);
+    const savedAppointment = await this.appointmentsRepository.save(appointment);
+    const actorUser = await this.usersRepository.findOne({ where: { id: actor.sub } });
+
+    if (!actorUser?.googleRefreshToken) {
+      return savedAppointment;
+    }
+
+    const durationMinutes = Number(
+      process.env.GOOGLE_CALENDAR_APPOINTMENT_DURATION_MINUTES ?? '60',
+    );
+    const endAt = new Date(
+      createAppointmentDto.scheduledAt.getTime() +
+      (Number.isNaN(durationMinutes) ? 60 : durationMinutes) * 60 * 1000,
+    );
+
+    try {
+      const event = await this.googleCalendarService.createAppointmentEventForUser(actorUser.id, {
+        summary: `Cita en Satreria ${customer.store.name} - ${customer.name}`,
+        description: createAppointmentDto.notes ?? `Appointment for ${customer.name}`,
+        startAt: createAppointmentDto.scheduledAt,
+        endAt,
+      });
+
+      savedAppointment.googleCalendarEventId = event.eventId;
+      savedAppointment.googleCalendarOwnerUserId = actorUser.id;
+      return this.appointmentsRepository.save(savedAppointment);
+    } catch (error) {
+      await this.appointmentsRepository.remove(savedAppointment);
+      throw error;
+    }
   }
 
   async findAll(
@@ -80,6 +133,17 @@ export class AppointmentsService {
 
     if (!isSuperAdmin(actor.role)) {
       qb.andWhere('appointment.storeId = :storeId', { storeId: actor.storeId });
+    }
+
+    if (actor.role === Role.CLIENT) {
+      const actorCustomerId = await this.resolveActorCustomerId(actor);
+      qb.andWhere('customer.id = :customerId', { customerId: actorCustomerId });
+    }
+
+    if (query.customerId) {
+      qb.andWhere('customer.id = :filteredCustomerId', {
+        filteredCustomerId: query.customerId,
+      });
     }
 
     if (query.status) {
@@ -122,6 +186,13 @@ export class AppointmentsService {
       throw new ForbiddenException('You cannot access appointments from another store.');
     }
 
+    if (actor.role === Role.CLIENT) {
+      const actorCustomerId = await this.resolveActorCustomerId(actor);
+      if (appointment.customer?.id !== actorCustomerId) {
+        throw new ForbiddenException('Clients can only access their own appointments.');
+      }
+    }
+
     return appointment;
   }
 
@@ -159,5 +230,28 @@ export class AppointmentsService {
   async remove(id: string, actor: JwtPayload): Promise<void> {
     const appointment = await this.findOne(id, actor);
     await this.appointmentsRepository.remove(appointment);
+  }
+
+  async cancel(id: string, actor: JwtPayload): Promise<Appointment> {
+    const appointment = await this.findOne(id, actor);
+
+    if (
+      appointment.status !== AppointmentStatusEnum.SCHEDULED &&
+      appointment.status !== AppointmentStatusEnum.CONFIRMED
+    ) {
+      throw new BadRequestException('Only scheduled or confirmed appointments can be cancelled.');
+    }
+
+    if (appointment.googleCalendarEventId && appointment.googleCalendarOwnerUserId) {
+      await this.googleCalendarService.cancelAppointmentEventForUser(
+        appointment.googleCalendarOwnerUserId,
+        appointment.googleCalendarEventId,
+      );
+      appointment.googleCalendarEventId = null;
+      appointment.googleCalendarOwnerUserId = null;
+    }
+
+    appointment.status = AppointmentStatusEnum.CANCELLED;
+    return this.appointmentsRepository.save(appointment);
   }
 }
