@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -58,6 +59,7 @@ export class Store {
   updatedAt: Date;
 
   @ManyToOne(() => Plan, (plan) => plan.stores)
+  @JoinColumn({ name: 'plan_id' })
   plan: Plan | null;
 
   @OneToMany(() => User, (user) => user.store, { nullable: false, cascade: true })

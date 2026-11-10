@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne, CreateDateColumn, UpdateDateColumn, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 import { CustomerMeasurement } from './customer-measurements.entity';
 import { User } from "./user.entity";
 import { Appointment } from './appointment.entity';
@@ -39,6 +39,7 @@ export class Customers {
     appointments: Appointment[];
 
     @ManyToOne(() => Store, (store) => store.customers)
+    @JoinColumn({ name: 'store_id' })
     store: Store;
 
     @OneToMany(() => Invoice, (invoice) => invoice.customer, { nullable: true })

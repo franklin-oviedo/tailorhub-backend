@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -22,8 +23,10 @@ export class OrderItem {
   subtotal: number;
 
   @ManyToOne(() => Order, (order) => order.items, { nullable: false })
+  @JoinColumn({ name: 'order_id' })
   order: Order;
 
   @ManyToOne(() => Product, (product) => product.orderItems, { nullable: false })
+  @JoinColumn({ name: 'product_id' })
   product: Product;
 }

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne, JoinColumn } from 'typeorm';
 import { Store } from './store.entity';
 import { User } from './user.entity';
 
@@ -23,6 +23,7 @@ export class Employee {
   notes: string;
 
   @ManyToOne(() => Store, store => store.employees)
+  @JoinColumn({ name: 'store_id' })
   store: Store;
 
   @OneToOne(() => User, user => user.employee)

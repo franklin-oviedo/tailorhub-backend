@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -33,6 +34,7 @@ export class UserInvitation {
   status: InvitationStatus;
 
   @ManyToOne(() => Store, { nullable: false })
+  @JoinColumn({ name: 'store_id' })
   store: Store;
 
   @Column({ name: 'invited_by_user_id', type: 'uuid' })

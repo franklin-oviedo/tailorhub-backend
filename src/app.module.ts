@@ -43,10 +43,13 @@ import { UserInvitation } from './entities/user-invitation.entity';
         const databaseUrl = configService.get<string>('DATABASE_URL');
         const isProduction = configService.get<string>('NODE_ENV') === 'production';
         const synchronizeOverride = configService.get<string>('DB_SYNCHRONIZE');
+        const isDatabaseUrlConfigured = Boolean(databaseUrl);
         const shouldSynchronize =
           synchronizeOverride !== undefined
             ? synchronizeOverride === 'true'
-            : !isProduction;
+            : isDatabaseUrlConfigured
+              ? false
+              : !isProduction;
 
         if (databaseUrl) {
           return {

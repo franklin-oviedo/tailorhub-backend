@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -34,12 +35,14 @@ export class Order {
   updatedAt: Date;
 
   @ManyToOne(() => Store, (store) => store.orders, { nullable: false })
+  @JoinColumn({ name: 'store_id' })
   store: Store;
 
   @OneToMany(() => OrderItem, (item) => item.order, { nullable: false, cascade: true })
   items: OrderItem[];
 
   @ManyToOne(() => Customers, (customer) => customer.orders, { nullable: false })
+  @JoinColumn({ name: 'customer_id' })
   customer: Customers;
 
   @OneToMany(() => Invoice, (invoice) => invoice.order, { nullable: true })

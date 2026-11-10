@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -48,8 +49,10 @@ export class Appointment {
   updatedAt: Date;
 
   @ManyToOne(() => Customers, (customer) => customer.appointments, { nullable: false })
+  @JoinColumn({ name: 'customer_id' })
   customer: Customers;
   
   @ManyToOne(() => Store, (store) => store.appointments)
+  @JoinColumn({ name: 'store_id' })
   store: Store;
 }
