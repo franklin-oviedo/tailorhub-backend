@@ -10,11 +10,13 @@ import { Store } from '../entities/store.entity';
 import { SuperAdminProtectionService } from './super-admin-protection.service';
 import { Permission } from '../entities/permission.entity';
 import { Plan } from '../entities/plan.entity';
+import { UserInvitation } from '../entities/user-invitation.entity';
+import { UserInvitationService } from './user-invitation.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Customers, Employee, Store, Permission, Plan])],
+  imports: [TypeOrmModule.forFeature([User, Customers, Employee, Store, Permission, Plan, UserInvitation])],
   controllers: [UsersController],
-  providers: [UsersService, PlanPermissionsGuard, SuperAdminProtectionService],
-  exports: [UsersService],
+  providers: [UsersService, PlanPermissionsGuard, SuperAdminProtectionService, UserInvitationService],
+  exports: [UsersService, UserInvitationService],
 })
 export class UsersModule {}

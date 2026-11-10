@@ -6,14 +6,17 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleCalendarService } from './google-calendar.service';
+import { UsersModule } from '../users/users.module';
 import { User } from '../entities/user.entity';
 import { Store } from '../entities/store.entity';
 import { Customers } from 'src/entities/customer.entity';
 import { Employee } from 'src/entities/employee.entity';
+import { UserInvitation } from '../entities/user-invitation.entity';
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User, Store, Customers, Employee]),
+    UsersModule,
+    TypeOrmModule.forFeature([User, Store, Customers, Employee, UserInvitation]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

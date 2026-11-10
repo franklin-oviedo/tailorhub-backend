@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmployeeController } from './employee.controller';
 import { EmployeeService } from './employee.service';
+import { UserInvitationService } from '../users/user-invitation.service';
 
 describe('EmployeeController', () => {
   let controller: EmployeeController;
@@ -17,6 +18,12 @@ describe('EmployeeController', () => {
             findOne: jest.fn(),
             update: jest.fn(),
             remove: jest.fn(),
+          },
+        },
+        {
+          provide: UserInvitationService,
+          useValue: {
+            createEmployeeInvitation: jest.fn(),
           },
         },
       ],

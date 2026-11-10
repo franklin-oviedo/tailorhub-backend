@@ -30,6 +30,7 @@ import { InvoiceItem } from './entities/invoice-item.entity';
 import { InvoicePayment } from './entities/invoice-payment.entity';
 import { CreditNote } from './entities/credit-note.entity';
 import { DebitNote } from './entities/debit-note.entity';
+import { UserInvitation } from './entities/user-invitation.entity';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { DebitNote } from './entities/debit-note.entity';
               InvoicePayment,
               CreditNote,
               DebitNote,
+              UserInvitation,
             ],
             synchronize: shouldSynchronize,
             ssl: isProduction ? { rejectUnauthorized: false } : false,
@@ -98,6 +100,7 @@ import { DebitNote } from './entities/debit-note.entity';
             InvoicePayment,
             CreditNote,
             DebitNote,
+            UserInvitation,
           ],
           synchronize: shouldSynchronize,
           ssl: isProduction ? { rejectUnauthorized: false } : false,

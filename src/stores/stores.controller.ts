@@ -34,6 +34,9 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { ListStoresQueryDto } from './dto/list-stores-query.dto';
 import { ApiMessageResponseDto } from '../common/dto/api-message-response.dto';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
+import { CreateUserInvitationDto } from '../users/dto/create-user-invitation.dto';
 
 @Controller('stores')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -50,8 +53,8 @@ export class StoresController {
   @ApiBody({ type: CreateStoreDto })
   @ApiOkResponse({ description: 'Store created successfully.' })
   @ApiBadRequestResponse({ description: 'Validation error or duplicated email.' })
-  create(@Body() createStoreDto: CreateStoreDto) {
-    return this.storesService.create(createStoreDto);
+  create(@Body() createStoreDto: CreateStoreDto, @CurrentUser() user: JwtPayload) {
+    return this.storesService.create(createStoreDto, user);
   }
 
   @Get()
@@ -132,6 +135,22 @@ export class StoresController {
   @ApiBadRequestResponse({ description: 'Missing image, invalid file, or storage configuration error.' })
   uploadSeal(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
     return this.storesService.uploadSeal(id, file);
+  }
+
+  @Post(':id/manager-invitations')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @ApiOperation({ summary: 'Generate invitation link for manager onboarding in a store' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: CreateUserInvitationDto })
+  @ApiOkResponse({ description: 'Manager invitation generated successfully.' })
+  @ApiNotFoundResponse({ description: 'Store not found.' })
+  @ApiBadRequestResponse({ description: 'Validation error or invalid invitation state.' })
+  createManagerInvitation(
+    @Param('id') id: string,
+    @Body() dto: CreateUserInvitationDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.storesService.createManagerInvitation(id, dto, user);
   }
 
   @Delete(':id')

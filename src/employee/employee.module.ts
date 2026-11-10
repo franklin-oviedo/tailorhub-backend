@@ -5,9 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Employee } from '../entities/employee.entity';
 import { User } from '../entities/user.entity';
 import { PlanPermissionsGuard } from '../common/guards/plan-permissions.guard';
+import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Employee, User])],
+  imports: [TypeOrmModule.forFeature([Employee, User]), UsersModule],
   controllers: [EmployeeController],
   providers: [EmployeeService, PlanPermissionsGuard],
 })

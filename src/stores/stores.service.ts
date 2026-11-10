@@ -12,6 +12,9 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { ListStoresQueryDto } from './dto/list-stores-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
+import { UserInvitationService } from '../users/user-invitation.service';
+import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
+import { CreateUserInvitationDto } from '../users/dto/create-user-invitation.dto';
 
 @Injectable()
 export class StoresService {
@@ -20,6 +23,7 @@ export class StoresService {
     @InjectRepository(Store)
     private readonly storesRepository: Repository<Store>,
     private readonly configService: ConfigService,
+    private readonly userInvitationService: UserInvitationService,
   ) {}
   /* c8 ignore stop */
   private withNormalizedStoreMedia(store: Store): Store {
@@ -71,7 +75,7 @@ export class StoresService {
     return createClient(supabaseUrl, supabaseServiceRoleKey);
   }
 
-  async create(createStoreDto: CreateStoreDto): Promise<Store> {
+  async create(createStoreDto: CreateStoreDto, actor: JwtPayload): Promise<Store> {
     const existingStore = await this.storesRepository.findOne({
       where: [
         { phone: createStoreDto.phone },
@@ -85,6 +89,15 @@ export class StoresService {
 
     const store = this.storesRepository.create(createStoreDto);
     const savedStore = await this.storesRepository.save(store);
+
+    if (createStoreDto.managerId) {
+      await this.userInvitationService.assignManagerToStore(
+        actor,
+        savedStore.id,
+        createStoreDto.managerId,
+      );
+    }
+
     return this.withNormalizedStoreMedia(savedStore);
   }
 
@@ -235,5 +248,13 @@ export class StoresService {
     store.seal = publicUrl;
     const savedStore = await this.storesRepository.save(store);
     return this.withNormalizedStoreMedia(savedStore);
+  }
+
+  async createManagerInvitation(
+    storeId: string,
+    dto: CreateUserInvitationDto,
+    actor: JwtPayload,
+  ) {
+    return this.userInvitationService.createManagerInvitation(actor, storeId, dto);
   }
 }

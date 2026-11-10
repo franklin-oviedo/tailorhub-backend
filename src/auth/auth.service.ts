@@ -10,13 +10,16 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
+import { UserInvitation } from '../entities/user-invitation.entity';
 import { Store } from '../entities/store.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
 import { LinkGoogleCalendarDto } from './dto/link-google-calendar.dto';
+import { AcceptGoogleInvitationDto } from './dto/accept-google-invitation.dto';
 import { Role } from '../common/enums/role.enum';
 import { AuthProvider } from '../common/enums/auth-provider.enum';
+import { InvitationStatus } from '../common/enums/invitation-status.enum';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Customers } from '../entities/customer.entity';
 import { Employee } from '../entities/employee.entity';
@@ -34,6 +37,8 @@ export class AuthService {
     private readonly customersRepository: Repository<Customers>,
     @InjectRepository(Store)
     private readonly storesRepository: Repository<Store>,
+    @InjectRepository(UserInvitation)
+    private readonly userInvitationsRepository: Repository<UserInvitation>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly googleCalendarService: GoogleCalendarService,
@@ -237,6 +242,124 @@ export class AuthService {
       linked: true,
       calendarEmail: linked.calendarEmail,
     };
+  }
+
+  async acceptGoogleInvitation(
+    dto: AcceptGoogleInvitationDto,
+  ): Promise<{ accessToken: string }> {
+    const googleUser = await this.verifyGoogleToken(dto.credential);
+    const invitation = await this.userInvitationsRepository.findOne({
+      where: { token: dto.invitationToken, status: InvitationStatus.PENDING },
+      relations: { store: true },
+    });
+
+    if (!invitation) {
+      throw new BadRequestException('Invitation is invalid or already used.');
+    }
+
+    if (invitation.expiresAt.getTime() <= Date.now()) {
+      invitation.status = InvitationStatus.EXPIRED;
+      await this.userInvitationsRepository.save(invitation);
+      throw new BadRequestException('Invitation has expired.');
+    }
+
+    if (invitation.email.trim().toLowerCase() !== googleUser.email.trim().toLowerCase()) {
+      throw new BadRequestException('Invitation email does not match Google account email.');
+    }
+
+    if (invitation.role !== Role.EMPLOYEE && invitation.role !== Role.MANAGER) {
+      throw new BadRequestException('Invitation role is invalid.');
+    }
+
+    let user = await this.usersRepository.findOne({
+      where: [
+        { googleId: googleUser.googleId },
+        { employee: { email: googleUser.email } },
+        { customer: { email: googleUser.email } },
+      ],
+      relations: { employee: true, store: true, customer: true },
+    });
+
+    if (user && user.isActive === false) {
+      throw new UnauthorizedException('User account is disabled.');
+    }
+
+    if (!user) {
+      const employee = await this.employeesRepository.save(
+        this.employeesRepository.create({
+          name:
+            [googleUser.firstName, googleUser.lastName].filter(Boolean).join(' ').trim() ||
+            googleUser.email.split('@')[0],
+          email: googleUser.email,
+          phone: dto.phone ?? '',
+          active: true,
+          store: invitation.store,
+        } as Partial<Employee>),
+      );
+
+      const placeholderPassword = await bcrypt.hash(
+        `google-invite-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        12,
+      );
+
+      user = this.usersRepository.create({
+        employee,
+        password: placeholderPassword,
+        role: invitation.role,
+        authProvider: AuthProvider.GOOGLE,
+        googleId: googleUser.googleId,
+        avatarUrl: googleUser.picture ?? null,
+        googleCalendarEmail: googleUser.email,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        store: invitation.store,
+      });
+    } else {
+      if (user.role === Role.SUPER_ADMIN || user.role === Role.ADMIN) {
+        throw new BadRequestException('Admin users cannot accept employee or manager invitations.');
+      }
+
+      if (!user.employee) {
+        user.employee = await this.employeesRepository.save(
+          this.employeesRepository.create({
+            name:
+              [googleUser.firstName, googleUser.lastName].filter(Boolean).join(' ').trim() ||
+              googleUser.email.split('@')[0],
+            email: googleUser.email,
+            phone: dto.phone ?? user.customer?.phone ?? '',
+            active: true,
+            store: invitation.store,
+          } as Partial<Employee>),
+        );
+      } else {
+        user.employee.email = googleUser.email;
+        user.employee.name =
+          [googleUser.firstName, googleUser.lastName].filter(Boolean).join(' ').trim() ||
+          user.employee.name;
+        if (dto.phone) {
+          user.employee.phone = dto.phone;
+        }
+        user.employee.active = true;
+        user.employee.store = invitation.store;
+        await this.employeesRepository.save(user.employee);
+      }
+
+      user.role = invitation.role;
+      user.store = invitation.store;
+      user.authProvider = AuthProvider.GOOGLE;
+      user.googleId = googleUser.googleId;
+      user.avatarUrl = googleUser.picture ?? user.avatarUrl ?? null;
+      user.googleCalendarEmail = googleUser.email;
+    }
+
+    const savedUser = await this.usersRepository.save(user);
+    invitation.status = InvitationStatus.ACCEPTED;
+    invitation.acceptedAt = new Date();
+    invitation.acceptedByUserId = savedUser.id;
+    await this.userInvitationsRepository.save(invitation);
+
+    return { accessToken: await this.signToken(savedUser) };
   }
 
   private async resolveDefaultStore(): Promise<Store | null> {

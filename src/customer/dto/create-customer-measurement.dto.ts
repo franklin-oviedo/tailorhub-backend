@@ -31,6 +31,13 @@ class ShirtMeasurementsDto {
   @ApiPropertyOptional({ example: 37 }) @IsOptional() @IsNumber() anchoCuello?: number;
   @ApiPropertyOptional({ example: 18 }) @IsOptional() @IsNumber() delantera?: number;
   @ApiPropertyOptional({ example: 20 }) @IsOptional() @IsNumber() trasera?: number;
+  @ApiPropertyOptional({
+    example: 20,
+    description: 'Alias de trasera para compatibilidad con clientes que envían "tracera".',
+  })
+  @IsOptional()
+  @IsNumber()
+  tracera?: number;
 }
 
 class JacketMeasurementsDto {
@@ -64,6 +71,30 @@ export class CreateCustomerMeasurementDto {
   @ApiProperty({ format: 'uuid', example: 'afb0ba55-2939-4336-9c8b-e5ea3692f346' })
   @IsUUID()
   customerId: string;
+
+  @ApiPropertyOptional({
+    example: 72.5,
+    description: 'Legacy field. Maps to pantsWomen.cintura',
+  })
+  @IsOptional()
+  @IsNumber()
+  waist?: number;
+
+  @ApiPropertyOptional({
+    example: 95,
+    description: 'Legacy field. Maps to pantsWomen.bacinete',
+  })
+  @IsOptional()
+  @IsNumber()
+  hips?: number;
+
+  @ApiPropertyOptional({
+    example: 102,
+    description: 'Legacy field. Maps to pantsWomen.largoTotal',
+  })
+  @IsOptional()
+  @IsNumber()
+  inseam?: number;
 
   @ApiPropertyOptional({ type: WomenPantsMeasurementsDto })
   @IsOptional()

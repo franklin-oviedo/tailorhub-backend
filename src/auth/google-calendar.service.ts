@@ -126,7 +126,7 @@ export class GoogleCalendarService {
       },
     );
 
-    if (response.status === 404) {
+    if (response.status === 404 || response.status === 410) {
       return;
     }
 

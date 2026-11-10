@@ -21,6 +21,68 @@ export class CustomerMeasurementsService {
     private readonly customersRepository: Repository<Customers>,
   ) { }
 
+  private async findMeasurementByMeasurementOrCustomerId(id: string): Promise<CustomerMeasurement | null> {
+    const byMeasurementId = await this.customerMeasurementsRepository.findOne({
+      where: { id },
+      relations: { customer: { store: true } },
+    });
+
+    if (byMeasurementId) {
+      return byMeasurementId;
+    }
+
+    return this.customerMeasurementsRepository.findOne({
+      where: { customer: { id } },
+      relations: { customer: { store: true } },
+    });
+  }
+
+  private normalizeShirtMeasurements(shirts: unknown): unknown {
+    if (!shirts || typeof shirts !== 'object') {
+      return shirts;
+    }
+
+    const normalized = { ...shirts } as Record<string, unknown>;
+
+    if (normalized.tracera !== undefined && normalized.trasera === undefined) {
+      normalized.trasera = normalized.tracera;
+    }
+
+    return normalized;
+  }
+
+  private mergeLegacyPantsMeasurements(
+    payload: { pantsWomen?: unknown; waist?: unknown; hips?: unknown; inseam?: unknown },
+    existing?: unknown,
+  ): object | null {
+    const base =
+      existing && typeof existing === 'object'
+        ? { ...(existing as Record<string, unknown>) }
+        : {};
+
+    const structured =
+      payload.pantsWomen && typeof payload.pantsWomen === 'object'
+        ? (payload.pantsWomen as Record<string, unknown>)
+        : {};
+
+    const merged: Record<string, unknown> = {
+      ...base,
+      ...structured,
+    };
+
+    if (payload.waist !== undefined) {
+      merged.cintura = payload.waist;
+    }
+    if (payload.hips !== undefined) {
+      merged.bacinete = payload.hips;
+    }
+    if (payload.inseam !== undefined) {
+      merged.largoTotal = payload.inseam;
+    }
+
+    return Object.keys(merged).length > 0 ? merged : null;
+  }
+
   async create(
     dto: CreateCustomerMeasurementDto,
     actor: JwtPayload,
@@ -50,8 +112,8 @@ export class CustomerMeasurementsService {
     }
 
     const newMeasurement = this.customerMeasurementsRepository.create({
-      pantsWomen: dto.pantsWomen ?? null,
-      shirts: dto.shirts ?? null,
+      pantsWomen: this.mergeLegacyPantsMeasurements(dto),
+      shirts: this.normalizeShirtMeasurements(dto.shirts) ?? null,
       jackets: dto.jackets ?? null,
       dresses: dto.dresses ?? null,
       notes: dto.notes,
@@ -63,10 +125,7 @@ export class CustomerMeasurementsService {
 
   async findOne(id: string, actor: JwtPayload): Promise<CustomerMeasurement> {
 
-     const customerMeasurement = await this.customerMeasurementsRepository.findOne({
-      where: { customer: { id } },
-      relations: { customer: { store: true } },
-    });
+    const customerMeasurement = await this.findMeasurementByMeasurementOrCustomerId(id);
 
     if (!customerMeasurement) {
       throw new BadRequestException('Customer measurement not found.');
@@ -80,10 +139,7 @@ export class CustomerMeasurementsService {
   }
 
   async update(id: string, updateCustomerMeasurementDto: UpdateCustomerMeasurementDto, actor: JwtPayload) {
-    const customerMeasurement = await this.customerMeasurementsRepository.findOne({
-      where: { customer: { id } },
-      relations: { customer: { store: true } },
-    });
+    const customerMeasurement = await this.findMeasurementByMeasurementOrCustomerId(id);
 
     if (!customerMeasurement) {
       throw new BadRequestException('Customer measurement not found.');
@@ -93,11 +149,20 @@ export class CustomerMeasurementsService {
       throw new ForbiddenException('Customer belongs to another store.');
     }
 
-    if (updateCustomerMeasurementDto.pantsWomen !== undefined) {
-      customerMeasurement.pantsWomen = updateCustomerMeasurementDto.pantsWomen ?? null;
+    if (
+      updateCustomerMeasurementDto.pantsWomen !== undefined ||
+      updateCustomerMeasurementDto.waist !== undefined ||
+      updateCustomerMeasurementDto.hips !== undefined ||
+      updateCustomerMeasurementDto.inseam !== undefined
+    ) {
+      customerMeasurement.pantsWomen = this.mergeLegacyPantsMeasurements(
+        updateCustomerMeasurementDto,
+        customerMeasurement.pantsWomen,
+      );
     }
     if (updateCustomerMeasurementDto.shirts !== undefined) {
-      customerMeasurement.shirts = updateCustomerMeasurementDto.shirts ?? null;
+      customerMeasurement.shirts =
+        this.normalizeShirtMeasurements(updateCustomerMeasurementDto.shirts) ?? null;
     }
     if (updateCustomerMeasurementDto.jackets !== undefined) {
       customerMeasurement.jackets = updateCustomerMeasurementDto.jackets ?? null;
@@ -113,10 +178,7 @@ export class CustomerMeasurementsService {
   }
 
   async remove(id: string, actor: JwtPayload) {
-    const customerMeasurement = await this.customerMeasurementsRepository.findOne({
-      where: { customer: { id } },
-      relations: { customer: { store: true } },
-    });
+    const customerMeasurement = await this.findMeasurementByMeasurementOrCustomerId(id);
 
     if (!customerMeasurement) {
       throw new BadRequestException('Customer measurement not found.');

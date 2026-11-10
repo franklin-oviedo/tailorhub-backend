@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { Appointment } from '../entities/appointment.entity';
 import { AppointmentStatusEnum } from '../enums/appointments.enum';
 import { User } from '../entities/user.entity';
@@ -48,6 +48,51 @@ export class AppointmentsService {
     return customerId;
   }
 
+  private async resolveCalendarOwnerUserId(
+    actor: JwtPayload,
+    storeId: string,
+  ): Promise<string | null> {
+    const actorUser = await this.usersRepository.findOne({
+      where: { id: actor.sub },
+      select: {
+        id: true,
+        isActive: true,
+        role: true,
+        googleRefreshToken: true,
+      },
+    });
+
+    if (actorUser && actorUser.isActive === false) {
+      return null;
+    }
+
+    if (actorUser?.role === Role.MANAGER && actorUser.googleRefreshToken) {
+      return actorUser.id;
+    }
+
+    const linkedManager = await this.usersRepository.findOne({
+      where: {
+        role: Role.MANAGER,
+        isActive: true,
+        store: { id: storeId },
+        googleRefreshToken: Not(IsNull()),
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (linkedManager?.id) {
+      return linkedManager.id;
+    }
+
+    if (actorUser?.googleRefreshToken) {
+      return actorUser.id;
+    }
+
+    return null;
+  }
+
   async create(
     createAppointmentDto: CreateAppointmentDto,
     actor: JwtPayload,
@@ -87,9 +132,9 @@ export class AppointmentsService {
     });
 
     const savedAppointment = await this.appointmentsRepository.save(appointment);
-    const actorUser = await this.usersRepository.findOne({ where: { id: actor.sub } });
+    const calendarOwnerUserId = await this.resolveCalendarOwnerUserId(actor, customer.store.id);
 
-    if (!actorUser?.googleRefreshToken) {
+    if (!calendarOwnerUserId) {
       return savedAppointment;
     }
 
@@ -102,7 +147,7 @@ export class AppointmentsService {
     );
 
     try {
-      const event = await this.googleCalendarService.createAppointmentEventForUser(actorUser.id, {
+      const event = await this.googleCalendarService.createAppointmentEventForUser(calendarOwnerUserId, {
         summary: `Cita en Satreria ${customer.store.name} - ${customer.name}`,
         description: createAppointmentDto.notes ?? `Appointment for ${customer.name}`,
         startAt: createAppointmentDto.scheduledAt,
@@ -110,7 +155,7 @@ export class AppointmentsService {
       });
 
       savedAppointment.googleCalendarEventId = event.eventId;
-      savedAppointment.googleCalendarOwnerUserId = actorUser.id;
+      savedAppointment.googleCalendarOwnerUserId = calendarOwnerUserId;
       return this.appointmentsRepository.save(savedAppointment);
     } catch (error) {
       await this.appointmentsRepository.remove(savedAppointment);

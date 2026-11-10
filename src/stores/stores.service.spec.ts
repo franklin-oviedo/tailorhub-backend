@@ -5,6 +5,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Store } from '../entities/store.entity';
 import { StoresService } from './stores.service';
+import { UserInvitationService } from '../users/user-invitation.service';
 
 describe('StoresService', () => {
   let service: StoresService;
@@ -28,6 +29,13 @@ describe('StoresService', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn(),
+          },
+        },
+        {
+          provide: UserInvitationService,
+          useValue: {
+            assignManagerToStore: jest.fn(),
+            createManagerInvitation: jest.fn(),
           },
         },
       ],
@@ -57,7 +65,7 @@ describe('StoresService', () => {
     storesRepository.create.mockReturnValue(created);
     storesRepository.save.mockResolvedValue(created);
 
-    const result = await service.create(dto);
+    const result = await service.create(dto as any, { sub: 'admin-1', role: 'admin' } as any);
 
     expect(result).toEqual(expect.objectContaining(created));
     expect(result.logo).toBeNull();
@@ -67,7 +75,10 @@ describe('StoresService', () => {
     storesRepository.findOne.mockResolvedValue({ id: 's1' } as Store);
 
     await expect(
-      service.create({ name: 'Tailor', email: 'tailor@test.com' }),
+      service.create(
+        { name: 'Tailor', email: 'tailor@test.com' } as any,
+        { sub: 'admin-1', role: 'admin' } as any,
+      ),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 

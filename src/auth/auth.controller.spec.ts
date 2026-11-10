@@ -7,6 +7,9 @@ describe('AuthController', () => {
   const authService = {
     register: jest.fn(),
     login: jest.fn(),
+    loginWithGoogle: jest.fn(),
+    linkGoogleCalendar: jest.fn(),
+    acceptGoogleInvitation: jest.fn(),
   };
 
   beforeEach(async () => {

@@ -24,6 +24,8 @@ import { ModulePermission } from '../common/enums/module-permission.enum';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { ApiMessageResponseDto } from '../common/dto/api-message-response.dto';
+import { UserInvitationService } from '../users/user-invitation.service';
+import { CreateUserInvitationDto } from '../users/dto/create-user-invitation.dto';
 
 @Controller('employee')
 @UseGuards(JwtAuthGuard, RolesGuard, PlanPermissionsGuard)
@@ -31,7 +33,10 @@ import { ApiMessageResponseDto } from '../common/dto/api-message-response.dto';
 @ApiBearerAuth('access-token')
 @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT token.' })
 export class EmployeeController {
-  constructor(private readonly employeeService: EmployeeService) {}
+  constructor(
+    private readonly employeeService: EmployeeService,
+    private readonly userInvitationService: UserInvitationService,
+  ) {}
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
@@ -96,5 +101,20 @@ export class EmployeeController {
   async remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     await this.employeeService.remove(id, user);
     return { message: 'Employee deleted successfully.' };
+  }
+
+  @Post('invitations')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
+  @Permissions(ModulePermission.EMPLOYEES_MANAGE)
+  @ApiOperation({ summary: 'Generate invitation link for employee Google onboarding' })
+  @ApiBody({ type: CreateUserInvitationDto })
+  @ApiOkResponse({ description: 'Employee invitation generated successfully.' })
+  @ApiBadRequestResponse({ description: 'Validation error or invalid invitation state.' })
+  @ApiForbiddenResponse({ description: 'Insufficient role or store permissions.' })
+  createEmployeeInvitation(
+    @Body() dto: CreateUserInvitationDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.userInvitationService.createEmployeeInvitation(user, dto);
   }
 }

@@ -7,10 +7,12 @@ import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { AuthProvider } from '../common/enums/auth-provider.enum';
 import { Role } from '../common/enums/role.enum';
+import { InvitationStatus } from '../common/enums/invitation-status.enum';
 import { Store } from '../entities/store.entity';
 import { User } from '../entities/user.entity';
 import { Customers } from '../entities/customer.entity';
 import { Employee } from '../entities/employee.entity';
+import { UserInvitation } from '../entities/user-invitation.entity';
 import { AuthService } from './auth.service';
 import { GoogleCalendarService } from './google-calendar.service';
 
@@ -25,6 +27,7 @@ describe('AuthService', () => {
   let storesRepository: jest.Mocked<Repository<Store>>;
   let customersRepository: jest.Mocked<Repository<Customers>>;
   let employeeRepository: jest.Mocked<Repository<Employee>>;
+  let userInvitationsRepository: jest.Mocked<Repository<UserInvitation>>;
   let jwtService: jest.Mocked<JwtService>;
   let configService: ConfigService;
   let googleCalendarService: jest.Mocked<GoogleCalendarService>;
@@ -59,6 +62,14 @@ describe('AuthService', () => {
           provide: getRepositoryToken(Store),
           useValue: {
             findOne: jest.fn(),
+            find: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(UserInvitation),
+          useValue: {
+            findOne: jest.fn(),
+            save: jest.fn(),
           },
         },
         {
@@ -97,6 +108,7 @@ describe('AuthService', () => {
     storesRepository = module.get(getRepositoryToken(Store));
     customersRepository = module.get(getRepositoryToken(Customers));
     employeeRepository = module.get(getRepositoryToken(Employee));
+    userInvitationsRepository = module.get(getRepositoryToken(UserInvitation));
     jwtService = module.get(JwtService);
     configService = module.get(ConfigService);
     googleCalendarService = module.get(GoogleCalendarService);
@@ -323,6 +335,46 @@ describe('AuthService', () => {
       'code-123',
       'google@test.com',
       undefined,
+    );
+  });
+
+  it('accepts google invitation and returns access token', async () => {
+    const invitationStore = { id: 'store-1' } as Store;
+    userInvitationsRepository.findOne.mockResolvedValue({
+      id: 'inv-1',
+      token: 'token-1',
+      email: 'google@test.com',
+      role: Role.EMPLOYEE,
+      status: InvitationStatus.PENDING,
+      store: invitationStore,
+      expiresAt: new Date(Date.now() + 60_000),
+    } as UserInvitation);
+    usersRepository.findOne.mockResolvedValue(null);
+    employeeRepository.create.mockImplementation((payload) => payload as Employee);
+    employeeRepository.save.mockImplementation(async (payload) => ({
+      id: 'emp-1',
+      ...payload,
+    }) as Employee);
+    (bcrypt.hash as jest.Mock).mockResolvedValue('placeholder-password');
+    usersRepository.create.mockImplementation((payload) => payload as User);
+    usersRepository.save.mockImplementation(async (payload) => ({
+      id: 'u1',
+      ...payload,
+    }) as User);
+    userInvitationsRepository.save.mockResolvedValue({} as UserInvitation);
+    jwtService.signAsync.mockResolvedValue('jwt-token');
+
+    const result = await service.acceptGoogleInvitation({
+      invitationToken: 'token-1',
+      credential: 'google-id-token',
+    });
+
+    expect(result).toEqual({ accessToken: 'jwt-token' });
+    expect(userInvitationsRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: InvitationStatus.ACCEPTED,
+        acceptedByUserId: 'u1',
+      }),
     );
   });
 });

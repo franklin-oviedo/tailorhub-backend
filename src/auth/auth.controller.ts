@@ -13,6 +13,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
 import { LinkGoogleCalendarDto } from './dto/link-google-calendar.dto';
+import { AcceptGoogleInvitationDto } from './dto/accept-google-invitation.dto';
 import { AccessTokenResponseDto } from './dto/access-token-response.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -80,5 +81,18 @@ export class AuthController {
     @Body() dto: LinkGoogleCalendarDto,
   ) {
     return this.authService.linkGoogleCalendar(user, dto);
+  }
+
+  @Post('google/invitations/accept')
+  @ApiOperation({ summary: 'Accept employee/manager invitation with Google account' })
+  @ApiBody({ type: AcceptGoogleInvitationDto })
+  @ApiCreatedResponse({
+    description: 'Invitation accepted and TailorHub login completed.',
+    type: AccessTokenResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invitation is invalid, expired, or does not match email.' })
+  @ApiUnauthorizedResponse({ description: 'Invalid Google token or inactive user.' })
+  acceptGoogleInvitation(@Body() dto: AcceptGoogleInvitationDto) {
+    return this.authService.acceptGoogleInvitation(dto);
   }
 }
