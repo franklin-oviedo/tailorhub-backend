@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StoresController } from './stores.controller';
 import { StoresService } from './stores.service';
+import { UploadedBinaryFile } from '../common/types/uploaded-file.type';
 
 describe('StoresController', () => {
   let controller: StoresController;
@@ -41,7 +42,7 @@ describe('StoresController', () => {
   });
 
   it('delegates uploadSeal', async () => {
-    const file = { mimetype: 'image/png', buffer: Buffer.from('seal') } as Express.Multer.File;
+    const file: UploadedBinaryFile = { mimetype: 'image/png', buffer: Buffer.from('seal') };
     storesService.uploadSeal.mockResolvedValue({ id: 's1', seal: 'https://example.com/seal.png' });
 
     await controller.uploadSeal('s1', file);

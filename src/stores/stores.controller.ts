@@ -36,6 +36,7 @@ import { ListStoresQueryDto } from './dto/list-stores-query.dto';
 import { ApiMessageResponseDto } from '../common/dto/api-message-response.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
+import type { UploadedBinaryFile } from '../common/types/uploaded-file.type';
 import { CreateUserInvitationDto } from '../users/dto/create-user-invitation.dto';
 
 @Controller('stores')
@@ -108,7 +109,7 @@ export class StoresController {
   @ApiOkResponse({ description: 'Store logo uploaded successfully.' })
   @ApiNotFoundResponse({ description: 'Store not found.' })
   @ApiBadRequestResponse({ description: 'Missing image, invalid file, or storage configuration error.' })
-  uploadLogo(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+  uploadLogo(@Param('id') id: string, @UploadedFile() file: UploadedBinaryFile) {
     return this.storesService.uploadLogo(id, file);
   }
 
@@ -133,7 +134,7 @@ export class StoresController {
   @ApiOkResponse({ description: 'Store seal uploaded successfully.' })
   @ApiNotFoundResponse({ description: 'Store not found.' })
   @ApiBadRequestResponse({ description: 'Missing image, invalid file, or storage configuration error.' })
-  uploadSeal(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+  uploadSeal(@Param('id') id: string, @UploadedFile() file: UploadedBinaryFile) {
     return this.storesService.uploadSeal(id, file);
   }
 

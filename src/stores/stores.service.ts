@@ -12,6 +12,7 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { ListStoresQueryDto } from './dto/list-stores-query.dto';
 import { PaginatedResult } from '../common/types/paginated-result.type';
+import { UploadedBinaryFile } from '../common/types/uploaded-file.type';
 import { UserInvitationService } from '../users/user-invitation.service';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { CreateUserInvitationDto } from '../users/dto/create-user-invitation.dto';
@@ -165,7 +166,7 @@ export class StoresService {
     return this.withNormalizedStoreMedia(updatedStore); 
   }
 
-  async uploadLogo(id: string, file: Express.Multer.File): Promise<Store> {
+  async uploadLogo(id: string, file: UploadedBinaryFile): Promise<Store> {
     if (!file) {
       throw new BadRequestException('Logo file is required.');
     }
@@ -210,7 +211,7 @@ export class StoresService {
     await this.storesRepository.remove(store);
   }
 
-  async uploadSeal(id: string, file: Express.Multer.File): Promise<Store> {
+  async uploadSeal(id: string, file: UploadedBinaryFile): Promise<Store> {
     if (!file) {
       throw new BadRequestException('Seal file is required.');
     }
