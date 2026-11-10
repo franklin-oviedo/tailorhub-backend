@@ -7,7 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const corsOrigins = (
-    process.env.CORS_ORIGINS ?? 'http://localhost:4200,http://127.0.0.1:4200'
+    process.env.CORS_ORIGINS ?? 'http://localhost:4200,http://127.0.0.1:4200,https://tailorhub-frontend-2i2vti9h0-kolectiv.vercel.app/'
   )
     .split(',')
     .map((origin) => origin.trim())
