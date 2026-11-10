@@ -42,7 +42,7 @@ export class EmployeeService {
           email: createEmployeeDto.email,
           store: { id: targetStoreId },
         },
-        relations: ['store'],
+        relations: { store: true },
       });
 
       if (existingByEmail) {
@@ -79,7 +79,7 @@ export class EmployeeService {
   async findOne(id: string, actor: JwtPayload): Promise<Employee> {
     const employee = await this.employeeRepository.findOne({
       where: { id },
-      relations: ['store', 'user'],
+      relations: { store: true, user: true },
     });
 
     if (!employee) {
@@ -112,7 +112,7 @@ export class EmployeeService {
           email: updateEmployeeDto.email,
           store: { id: targetStoreId },
         },
-        relations: ['store'],
+        relations: { store: true },
       });
 
       if (existingByEmail && existingByEmail.id !== employee.id) {

@@ -60,7 +60,13 @@ export class PlanPermissionsGuard implements CanActivate {
 
     const user = await usersRepository.findOne({
       where: { id: authUser.sub },
-      relations: ['store', 'store.plan', 'store.plan.permissions'],
+      relations: {
+        store: {
+          plan: {
+            permissions: true,
+          },
+        },
+      },
     });
 
     const grantedPermissions = user?.store?.plan?.permissions?.map((permission) => permission.name) ?? [];

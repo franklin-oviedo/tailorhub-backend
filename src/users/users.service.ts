@@ -46,7 +46,7 @@ export class UsersService {
   findMyProfile(userId: string) {
     return this.usersRepository.findOne({
       where: { id: userId },
-      relations: ['store', 'customer', 'employee'],
+      relations: { store: true, customer: true, employee: true },
     });
   }
 
@@ -169,7 +169,7 @@ export class UsersService {
   async findOne(id: string, actor: JwtPayload): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['store', 'customer', 'employee'],
+      relations: { store: true, customer: true, employee: true },
     });
 
     if (!user) {
@@ -187,7 +187,7 @@ export class UsersService {
   async update(id: string, updateUserDto: UpdateUserDto, actor: JwtPayload): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['store', 'customer', 'employee'],
+      relations: { store: true, customer: true, employee: true },
     });
     if (!user) {
       throw new NotFoundException('User not found.');
@@ -318,7 +318,7 @@ export class UsersService {
   async disable(id: string, actor: JwtPayload): Promise<void> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['store', 'customer', 'employee'],
+      relations: { store: true, customer: true, employee: true },
     });
     if (!user) {
       throw new NotFoundException('User not found.');
@@ -355,7 +355,7 @@ export class UsersService {
   async remove(id: string, actor: JwtPayload): Promise<void> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['store', 'customer', 'employee'],
+      relations: { store: true, customer: true, employee: true },
     });
     if (!user) {
       throw new NotFoundException('User not found.');

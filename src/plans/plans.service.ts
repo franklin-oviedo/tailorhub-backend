@@ -32,13 +32,13 @@ export class PlansService {
   }
 
   findAll(): Promise<Plan[]> {
-    return this.plansRepository.find({ relations: ['permissions'] });
+    return this.plansRepository.find({ relations: { permissions: true } });
   }
 
   async findOne(id: string): Promise<Plan> {
     const plan = await this.plansRepository.findOne({
       where: { id },
-      relations: ['permissions'],
+      relations: { permissions: true },
     });
 
     if (!plan) {

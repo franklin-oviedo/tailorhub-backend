@@ -96,7 +96,7 @@ export class SuperAdminProtectionService implements OnApplicationBootstrap {
 
     const existingPlan = await this.plansRepository.findOne({
       where: { name: defaultPlanName },
-      relations: ['permissions'],
+      relations: { permissions: true },
     });
 
     if (existingPlan) {
@@ -130,12 +130,12 @@ export class SuperAdminProtectionService implements OnApplicationBootstrap {
 
     let store = await this.storesRepository.findOne({
       where: [{ email: defaultStoreEmail }, { name: defaultStoreName }],
-      relations: ['plan'],
+      relations: { plan: true },
     });
 
     const defaultPlan = await this.plansRepository.findOne({
       where: { name: defaultPlanName },
-      relations: ['permissions'],
+      relations: { permissions: true },
     });
 
     if (!store) {
@@ -157,7 +157,7 @@ export class SuperAdminProtectionService implements OnApplicationBootstrap {
         email: superAdminEmail,
         store: { id: store.id },
       },
-      relations: ['store'],
+      relations: { store: true },
     });
 
     if (!employee) {
@@ -174,13 +174,13 @@ export class SuperAdminProtectionService implements OnApplicationBootstrap {
 
     let superAdminUser = await this.usersRepository.findOne({
       where: { role: Role.SUPER_ADMIN },
-      relations: ['store', 'employee'],
+      relations: { store: true, employee: true },
     });
 
     if (!superAdminUser) {
       superAdminUser = await this.usersRepository.findOne({
         where: { employee: { id: employee.id } },
-        relations: ['store', 'employee'],
+        relations: { store: true, employee: true },
       });
     }
 

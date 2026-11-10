@@ -79,7 +79,7 @@ export class ServicesService {
   async findOne(id: string, actor: JwtPayload): Promise<Product> {
     const product = await this.productsRepository.findOne({
       where: { id },
-      relations: ['store'],
+      relations: { store: true },
     });
     if (!product) {
       throw new NotFoundException('Product not found.');
