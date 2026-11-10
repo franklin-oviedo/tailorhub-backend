@@ -127,9 +127,10 @@ export class OrdersService {
     const qb = this.ordersRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.customer', 'customer')
+      .leftJoinAndSelect('order.store', 'store');
 
     if (!isSuperAdmin(actor.role)) {
-      qb.andWhere('order.storeId = :storeId', { storeId: actor.storeId });
+      qb.andWhere('store.id = :storeId', { storeId: actor.storeId });
     }
 
     if (actor.role === Role.CLIENT) {
@@ -141,8 +142,8 @@ export class OrdersService {
       qb.andWhere('order.status = :status', { status: query.status });
     }
 
-    if (query.customerId) {
-      qb.andWhere('order.customerId = :customerId', { customerId: query.customerId });
+    if (query.customerId && query.customerId !== 'undefined') {
+      qb.andWhere('customer.id = :customerId', { customerId: query.customerId });
     }
 
     qb.orderBy('order.createdAt', 'DESC').skip(skip).take(limit);

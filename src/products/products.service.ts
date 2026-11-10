@@ -45,10 +45,12 @@ export class ServicesService {
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const qb = this.productsRepository.createQueryBuilder('product');
+    const qb = this.productsRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.store', 'store');
 
     if (!isSuperAdmin(actor.role)) {
-      qb.andWhere('product.storeId = :storeId', { storeId: actor.storeId });
+      qb.andWhere('store.id = :storeId', { storeId: actor.storeId });
     }
 
     if (query.search) {

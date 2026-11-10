@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsDate, IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
@@ -7,6 +7,18 @@ import { AppointmentStatusEnum } from '../../enums/appointments.enum';
 export class ListAppointmentsQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid', description: 'Filter by customer id.' })
   @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (
+      value === undefined ||
+      value === null ||
+      value === '' ||
+      value === 'undefined' ||
+      value === 'null'
+    ) {
+      return undefined;
+    }
+    return value;
+  })
   @IsUUID()
   customerId?: string;
 

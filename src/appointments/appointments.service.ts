@@ -174,10 +174,10 @@ export class AppointmentsService {
     const qb = this.appointmentsRepository
       .createQueryBuilder('appointment')
       .leftJoinAndSelect('appointment.customer', 'customer')
-      .leftJoinAndSelect('appointment.store', 'store')
+      .leftJoinAndSelect('appointment.store', 'store');
 
     if (!isSuperAdmin(actor.role)) {
-      qb.andWhere('appointment.storeId = :storeId', { storeId: actor.storeId });
+      qb.andWhere('store.id = :storeId', { storeId: actor.storeId });
     }
 
     if (actor.role === Role.CLIENT) {
@@ -185,7 +185,7 @@ export class AppointmentsService {
       qb.andWhere('customer.id = :customerId', { customerId: actorCustomerId });
     }
 
-    if (query.customerId) {
+    if (query.customerId && query.customerId !== 'undefined') {
       qb.andWhere('customer.id = :filteredCustomerId', {
         filteredCustomerId: query.customerId,
       });
